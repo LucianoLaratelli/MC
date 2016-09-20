@@ -9,20 +9,26 @@ struct particle
 };
 
 double sigma, epsilon, m;
+/****************************************************************************
+HOW TO USE THIS PROGRAM
 
+
+
+
+****************************************************************************/
 #define N 5 //number of particles
+#define T 300//kelvin
+#define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
+
 struct particle particles[N];
 /******************************************************************************
 TO DO:
 1. Figure out how starting_positions will work ???????????????? maybe done???????
-2. Translate the math for E_checker into code
-3. Work out how much the random displacement should be for rand_p_mover
-4. Write code for output to file
-5. ???
-6. profit
+5. Write code that outputs starting positions into 
+   a text file for starting_positions
+6. ???
+7. profit
 ******************************************************************************/
-
-
 
 /************************
 distfinder finds the distance between any two distinct particles of
@@ -58,7 +64,7 @@ double PEfinder()
     double rinv,r2,r4,r6,r12;//exponents of r
     double sor6,sor12;
     epsilon = 1; //this can be changed to experimental values
-    sigma = 1; / same as above
+    sigma = 1; // same as above
     s2 = sigma * sigma;
     s6 = s2*s2*s2;
     s12 = s6*s6;
@@ -97,7 +103,30 @@ particle a random distance away from its current position
 *********************/
 void rand_p_mover()
 {
-
+    //below, the two "random variables" are chosen so they are integers
+    //between 0 and the box length. They are then divided to give a 
+    //double, which (I think) allows for more states of the system
+    for(p=0;p<N;p++)
+    {
+        for(i=0;i<3;i++)
+        {
+            int delta,gamma;
+            delta = rand() % L;//random variable for a random value
+            gamma = rand() % L;//see above
+            double dog = delta/gamma;//"delta over gamma"
+            particles[p].x[i] += dog;
+            while(fabs(particles[p].x[i]) >= L) 
+            //we can't leave the box (nor do we want to be at the surface,)
+            //so if dog makes p go out of our bounds
+            //we re-roll until we get an acceptable value
+            {
+                delta = rand() % L;
+                gamma = rand() % L;
+                double dog = delta/gamma;
+                particles[p].x[i] += dog;
+            }
+        }
+    }
     return;
 }
 
@@ -108,11 +137,22 @@ THAT exponential to a random number between 0 and 1
 if the result of the exponential is less than the random number, it returns 1
 if the result of the exponential is greater than the random number, it returns 0
 ********************/
-bool E_checker()
+bool E_checker(double cpe, double npe)
 {
-
-    return True;
-    return False;
+    double prob,beta,k,deltaE;
+    deltaE = cpe - npe; //delta between the "current" PE and the "new" PE
+    double guess=((double)rand()/(double)RAND_MAX);
+    k = 1.3806485279 * pow(10,-23);//joules per kelvin
+    beta = 1/(k*T);//temperature as defined above
+    prob = exp(-1*beta*deltaE);
+    if(prob < guess)
+    {
+        return True;
+    }
+    else
+    {
+        return False;
+    }
 }
 
 /*******************
@@ -129,11 +169,12 @@ void starting_positions()
     startingpositions = fopen("startingpositions.txt", "r");
     for(p=0;p<N;p++)
     {
-        fscanf("%d %d %d", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2])
+        fscanf("%d %d %d\n", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2]);
         //not sure this will work, TEST!!! TEST!!! TEST!!!
     }
     return;
 }
+
 /******************
 output_to_file lives up to its name. It ouputs two things:
 the coordinates of the particles at every frame into an .xyz file;
@@ -141,28 +182,45 @@ the total energy of the system at every frame
 *******************/
 void output_to_file()
 {
+    int p,n;
+    for(p=0;p<N;p++)
+    {
+        fprintf(positions,"H %d %d %d\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
+        //hoping this works lmao
+    }
     return;
 }
+
 int main()
 {
     FILE * positions;//this is the .xyz file
     FILE * energies; //this is the .txt file
+    positions = fopen("positions.xyz","w");
+    energies = fopen("energies.txt","w");
     bool guess; 
     int c;//count
     int m;//maximum number of tries
+    printf("How many tries do you want to do?");//user-directed!
+    scanf("%d", &m);
     starting_positions();
+    cpe = PEfinder();//"current potential energy"
     for(c=0;c<m;c++)
     {
-        pe = PEfinder();
-        rand_p_mover();
-        guess = E_checker();
-        if (guess == 1)
+        rand_p_mover();//monte carlo step one
+        npe = PEfinder();//"new potential"
+        guess = E_checker(cpe,npe);//sets guess to bool, step two of monte carlo
+        if (guess == 1)//if new energy is less than the random number
         {
-            output_to_file;
+            output_to_file;//does positions and energy for this frame
+            cpe = npe;
+            fprintf(energies,"%d %d", c, cpe);
+            // if the new energy is accepted, it becomes the 
+            // "current" energy for the next loop 
         }
-        else
+        else //hopefully self-explanatory
         {
             continue;
+            cpe = cpe;
         }
     }
     return 0;
