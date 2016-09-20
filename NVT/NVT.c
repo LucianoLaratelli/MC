@@ -14,7 +14,7 @@ double sigma, epsilon, m;
 struct particle particles[N];
 /******************************************************************************
 TO DO:
-1. Figure out how starting_positions will work
+1. Figure out how starting_positions will work ???????????????? maybe done???????
 2. Translate the math for E_checker into code
 3. Work out how much the random displacement should be for rand_p_mover
 4. Write code for output to file
@@ -125,12 +125,13 @@ etc.
 *******************/
 void starting_positions()
 {
-for(p=0;p<N;p++)
-{
-    for(i=0;i<3;i++)
+    FILE * startingpositions;//any .txt file
+    startingpositions = fopen("startingpositions.txt", "r");
+    for(p=0;p<N;p++)
     {
-        particles[p].x[i] = //how to read line p from file?
-            //= p * (i + 1) 
+        fscanf("%d %d %d", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2])
+        //not sure this will work, TEST!!! TEST!!! TEST!!!
+    }
     return;
 }
 /******************
@@ -144,7 +145,7 @@ void output_to_file()
 }
 int main()
 {
-    FILE * positions;//this is the .xyz file 
+    FILE * positions;//this is the .xyz file
     FILE * energies; //this is the .txt file
     bool guess; 
     int c;//count
@@ -155,7 +156,7 @@ int main()
         pe = PEfinder();
         rand_p_mover();
         guess = E_checker();
-        if (guess) == 1)
+        if (guess == 1)
         {
             output_to_file;
         }
