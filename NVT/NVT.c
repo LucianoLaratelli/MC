@@ -16,7 +16,7 @@ HOW TO USE THIS PROGRAM
 
 
 ****************************************************************************/
-#define N 5 //number of particles
+#define N 8 //number of particles
 #define T 300//kelvin
 #define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
 
