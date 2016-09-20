@@ -83,14 +83,11 @@ double PEfinder()
                 sor6 = r6 * s6;
                 sor12 = r12 * s12;
                 //makes it harder to mess up the formula, h/t adam for the tip
-                for(i=0;i<3;i++)
-                {
-                    pe += 0.5 * (4 * epsilon * ((sor12)-sor6));
-                    // each sum does half the PE per pair
-                    // because the way this loop is written 
-                    // has each pair included twice
-                    // typing a "0.5 *" is easier than thinking about loops
-                }
+                pe += 0.5 * (4 * epsilon * ((sor12)-sor6));
+                // each sum does half the PE per pair
+                // because the way this loop is written 
+                // has each pair included twice
+                // typing a "0.5 *" is easier than thinking about loops
             }
         }
     }           
@@ -114,11 +111,11 @@ void rand_p_mover()
             delta = rand() % L;//random variable for a random value
             gamma = rand() % L;//see above
             double dog = delta/gamma;//"delta over gamma"
-            particles[p].x[i] += dog;
-            while(fabs(particles[p].x[i]) >= L) 
             //we can't leave the box (nor do we want to be at the surface,)
             //so if dog makes p go out of our bounds
-            //we re-roll until we get an acceptable value
+            //we re-roll until we get an acceptable value 
+            //particles[p].x[i] += dog;
+            while(fabs(particles[p].x[i]) >= L) 
             {
                 delta = rand() % L;
                 gamma = rand() % L;
@@ -147,11 +144,11 @@ bool E_checker(double cpe, double npe)
     prob = exp(-1*beta*deltaE);
     if(prob < guess)
     {
-        return True;
+        return true;
     }
     else
     {
-        return False;
+        return false;
     }
 }
 
