@@ -11,21 +11,14 @@ struct particle
 double sigma, epsilon, m;
 /****************************************************************************
 HOW TO USE THIS PROGRAM
-
-
-
-
-****************************************************************************/
-#define N 8 //number of particles
+***************************************************************************/
+#define N 1000 //number of particles
 #define T 300//kelvin
 #define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
 
 struct particle particles[N];
 /******************************************************************************
 TO DO:
-1. Figure out how starting_positions will work ???????????????? maybe done???????
-5. Write code that outputs starting positions into 
-   a text file for starting_positions
 6. ???
 7. profit
 ******************************************************************************/
@@ -63,6 +56,7 @@ double PEfinder()
     double s2,s4,s6,s12;//exponents of sigma
     double rinv,r2,r4,r6,r12;//exponents of r
     double sor6,sor12;
+    int b,c,pe;
     epsilon = 1; //this can be changed to experimental values
     sigma = 1; // same as above
     s2 = sigma * sigma;
@@ -83,7 +77,7 @@ double PEfinder()
                 sor6 = r6 * s6;
                 sor12 = r12 * s12;
                 //makes it harder to mess up the formula, h/t adam for the tip
-                pe += 0.5 * (4 * epsilon * ((sor12)-sor6));
+                pe += 0.5 * (4 * epsilon * (sor12-sor6));
                 // each sum does half the PE per pair
                 // because the way this loop is written 
                 // has each pair included twice
@@ -100,29 +94,21 @@ particle a random distance away from its current position
 *********************/
 void rand_p_mover()
 {
+    int i,p;
     //below, the two "random variables" are chosen so they are integers
     //between 0 and the box length. They are then divided to give a 
     //double, which (I think) allows for more states of the system
-    for(p=0;p<N;p++)
-    {
-        for(i=0;i<3;i++)
-        {
-            int delta,gamma;
-            delta = rand() % L;//random variable for a random value
-            gamma = rand() % L;//see above
-            double dog = delta/gamma;//"delta over gamma"
-            //we can't leave the box (nor do we want to be at the surface,)
-            //so if dog makes p go out of our bounds
-            //we re-roll until we get an acceptable value 
-            //particles[p].x[i] += dog;
-            while(fabs(particles[p].x[i]) >= L) 
-            {
-                delta = rand() % L;
-                gamma = rand() % L;
-                double dog = delta/gamma;
-                particles[p].x[i] += dog;
-            }
-        }
+    p = rand() / (RAND_MAX / N + 1);
+    i = rand() / (RAND_MAX / 4);
+    double delta;
+    delta = rand()/(RAND_MAX+ 1.0);
+    //we can't leave the box (nor do we want to be at the surface,)
+    //so if dog makes p go out of our bounds
+    //we re-roll until we get an acceptable value 
+    particles[p].x[i] += delta;
+    if(particles[p].x[i] >= L) 
+    { 
+        particles[p].x[i] =  particles[p].x[i]* delta;
     }
     return;
 }
@@ -139,10 +125,10 @@ bool E_checker(double cpe, double npe)
     double prob,beta,k,deltaE;
     deltaE = cpe - npe; //delta between the "current" PE and the "new" PE
     double guess=((double)rand()/(double)RAND_MAX);
-    k = 1.3806485279 * pow(10,-23);//joules per kelvin
+    k = 1.3806485279 * pow(10,-23);//Boltzmann constant in joules per kelvin
     beta = 1/(k*T);//temperature as defined above
     prob = exp(-1*beta*deltaE);
-    if(prob < guess)
+    if(prob > guess)
     {
         return true;
     }
@@ -150,6 +136,7 @@ bool E_checker(double cpe, double npe)
     {
         return false;
     }
+
 }
 
 /*******************
@@ -162,12 +149,12 @@ etc.
 *******************/
 void starting_positions()
 {
+    int p;
     FILE * startingpositions;//any .txt file
     startingpositions = fopen("startingpositions.txt", "r");
     for(p=0;p<N;p++)
     {
-        fscanf("%d %d %d\n", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2]);
-        //not sure this will work, TEST!!! TEST!!! TEST!!!
+        fscanf(startingpositions,"%lf %lf %lf\n", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2]);
     }
     return;
 }
@@ -179,10 +166,12 @@ the total energy of the system at every frame
 *******************/
 void output_to_file()
 {
+    FILE * positions;//this is the .xyz file
+    positions = fopen("positions.xyz","a");
     int p,n;
     for(p=0;p<N;p++)
     {
-        fprintf(positions,"H %d %d %d\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
+        fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
         //hoping this works lmao
     }
     return;
@@ -191,26 +180,29 @@ void output_to_file()
 int main()
 {
     FILE * positions;//this is the .xyz file
-    FILE * energies; //this is the .txt file
     positions = fopen("positions.xyz","w");
+    double cpe, npe;
+    FILE * energies; //this is the .txt file
     energies = fopen("energies.txt","w");
     bool guess; 
     int c;//count
     int m;//maximum number of tries
-    printf("How many tries do you want to do?");//user-directed!
+    printf("How many tries do you want to do?\n");//user-directed!
     scanf("%d", &m);
     starting_positions();
+    fprintf(positions, "%d \n\n",N);
     cpe = PEfinder();//"current potential energy"
     for(c=0;c<m;c++)
     {
+        cpe = cpe;
         rand_p_mover();//monte carlo step one
         npe = PEfinder();//"new potential"
         guess = E_checker(cpe,npe);//sets guess to bool, step two of monte carlo
-        if (guess == 1)//if new energy is less than the random number
+        if (guess == true)//if new energy is less than the random number
         {
-            output_to_file;//does positions and energy for this frame
+            output_to_file();//does positions
             cpe = npe;
-            fprintf(energies,"%d %d", c, cpe);
+            fprintf(energies,"%d %lf\n", c, cpe);
             // if the new energy is accepted, it becomes the 
             // "current" energy for the next loop 
         }
@@ -220,5 +212,7 @@ int main()
             cpe = cpe;
         }
     }
+    fclose(energies);
+    fclose(positions);
     return 0;
 }
