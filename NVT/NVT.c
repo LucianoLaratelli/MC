@@ -31,11 +31,18 @@ struct particle
     double x[3];
 };
 
-const int N = 27; //number of particles
+struct move_values
+{
+    int p;
+    double delta, gamma, zeta;
+};
+
+const int N = 2; //number of particles
 const int T = 300; //kelvin
-const int L = 5; //length of one side of the cube, L = sigma 
+const int L = 5; //length of one side of the cube, L = sigma
 
 struct particle particles[N];
+struct move_values move;
 
 /************************
 distfinder finds the distance between any two distinct particles of
@@ -50,6 +57,17 @@ double distfinder(int id_a, int id_b)
     for(i=0;i<3;i++)
     {
         delta = particles[id_a].x[i] - particles[id_b].x[i];
+        if(fabs(delta) > 0.5 * L) //this is for boundary conditions
+            {
+                if(delta > 0)
+                {
+                    delta -= L;
+                }
+                if(delta < 0)
+                {
+                    delta += L;
+                }
+            }
         dist2 += delta * delta;
         //finds distance coordinate by coordinate,
         //keeping the sum of the squares in memory
@@ -81,17 +99,6 @@ double PEfinder()
         for(c=b+1;c<N;c++)
         {
             r = distfinder(b,c);
-            if(fabs(r) > 0.5 * L) //this is for boundary conditions
-            {
-                if(r > 0)
-                {
-                    r -= L;
-                }
-                if(r < 0)
-                {
-                    r += L;
-                }
-            }
             rinv = 1/r;
             //formula has sigma/r; this is a bit easier to work with
             r2 = rinv * rinv;
@@ -100,11 +107,7 @@ double PEfinder()
             sor6 = r6 * s6;
             sor12 = r12 * s12;
             //makes it harder to mess up the formula, h/t adam for the tip
-            pe += 0.5 * (4 * epsilon * (sor12-sor6));
-            // each sum does half the PE per pair
-            // because the way this loop is written 
-            // has each pair included twice
-            // typing a "0.5 *" is easier than thinking about loops
+            pe += (4 * epsilon * (sor12-sor6));
         }
     }
     return pe;
@@ -141,16 +144,41 @@ and then calls positionchecker to enforce boundary conditions
 void rand_p_mover()
 {
     int i,p;
-    double delta;
+    double delta,gamma,zeta;
     p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
-    i = rand() / (RAND_MAX / 4); //i is a random int between 0 and 3
-    delta = rand()/(RAND_MAX+ 1.0); //delta is a random float between 0 and 1
+    delta = (rand()/(RAND_MAX)) - 0.5; //a random float between -0.5 and 0.5
+    gamma = (rand()/(RAND_MAX)) - 0.5; //same as above
+    zeta = (rand()/(RAND_MAX)) - 0.5; //same as above
+    move.p = p;
+    move.delta = delta;
+    move.gamma = gamma;
+    move.zeta = zeta;
+    particles[p].x[0] += delta;
+    particles[p].x[1] += gamma;
+    particles[p].x[2] += zeta;
     //we can't leave the box (nor do we want to be at the surface;)
     //if p manages to escape the box, positionchecker() bosses it around 
-    particles[p].x[i] += delta;
     positionchecker(p);
     return;
 }
+
+/****************
+rand_p_unmover does something very important: if a move is rejected, it
+makes the system go back to the state it was in before the move!
+it uses the struct move_values to do this. 
+****************/
+
+
+void rand_p_unmover()
+{
+    int p;
+    p = move.p;
+    particles[p].x[0] -= move.delta;
+    particles[p].x[1] -= move.gamma;
+    particles[p].x[1] -= move.zeta;
+    return;
+}
+
 
 /********************
 this is the second part of the monte carlo method; it takes the PE from PE finder
@@ -165,8 +193,8 @@ bool E_checker(double cpe, double npe)
     double deltaE,guess,k,beta,prob; //no ints in this function, no sir!
     deltaE = cpe - npe; // between the "current" PE and the "new" PE
     guess=((double)rand()/(double)RAND_MAX);
-    k = 1.3806485279 * pow(10,-23); //Boltzmann constant in joules per kelvin
-    beta = 1/(k*T); //temperature as defined above
+    k = 1; //Boltzmann constant in the natural units for the system
+    beta = 1/(k*T); //temperature as set above
     prob = exp(-beta*deltaE);
     if(prob > guess)
     {
@@ -183,6 +211,7 @@ starting_positions takes a .txt file with coordinates
 for the starting positions of the particles in this simulation.
 each line of the file is an (x,y,z) with format x y z\n
 *******************/
+/*
 void starting_positions()
 {
     int p;
@@ -194,7 +223,7 @@ void starting_positions()
     }
     fclose(startingpositions);
     return;
-}
+}*/
 
 /******************
 output_to_file lives up to its name;
@@ -211,6 +240,7 @@ void output_to_file()
         //hoping this works lmao
         //update: it works!
     }
+    fclose(positions);
     return;
 }
 
@@ -218,6 +248,7 @@ int main()
 {
     FILE * positions; 
     positions = fopen("positions.xyz","w");
+    fclose(positions);
     double cpe, npe;
     FILE * energies; 
     energies = fopen("energies.dat","w");
@@ -226,7 +257,13 @@ int main()
     int m; //maximum number of tries
     printf("How many tries do you want to do?\n"); //user-directed!
     scanf("%d", &m);
-    starting_positions();
+    //starting_positions();
+    particles[0].x[0] = 0;
+    particles[0].x[1] = 0;
+    particles[0].x[2] = 0;
+    particles[1].x[0] = 2;
+    particles[1].x[1] = 2;
+    particles[1].x[2] = 2;
     fprintf(positions, "%d \n\n",N);
     cpe = PEfinder(); //"current potential energy"
     for(c=0;c<m;c++)
@@ -244,12 +281,14 @@ int main()
         }
         else //hopefully self-explanatory
         {
+            //have to actually reject the move!
+            rand_p_unmover(); //returns the system to the previous state
             continue;
         }
        
     }
     fclose(energies);
-    fclose(positions);
+    
     printf("Done! Hope it worked out.\n"); //it never does
     return 0;
 }
