@@ -12,7 +12,7 @@ double sigma, epsilon, m;
 /****************************************************************************
 HOW TO USE THIS PROGRAM
 ***************************************************************************/
-#define N 1000 //number of particles
+#define N 27//number of particles
 #define T 300//kelvin
 #define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
 
@@ -183,7 +183,7 @@ int main()
     positions = fopen("positions.xyz","w");
     double cpe, npe;
     FILE * energies; //this is the .txt file
-    energies = fopen("energies.txt","w");
+    energies = fopen("energies.dat","w");
     bool guess; 
     int c;//count
     int m;//maximum number of tries
@@ -202,7 +202,7 @@ int main()
         {
             output_to_file();//does positions
             cpe = npe;
-            fprintf(energies,"%d %lf\n", c, cpe);
+            fprintf(energies,"%d %f\n", c, cpe);
             // if the new energy is accepted, it becomes the 
             // "current" energy for the next loop 
         }
@@ -214,5 +214,6 @@ int main()
     }
     fclose(energies);
     fclose(positions);
+    printf("Done! Hope it worked out.\n"); //it never does
     return 0;
 }
