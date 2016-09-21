@@ -12,7 +12,7 @@ double sigma, epsilon, m;
 /****************************************************************************
 HOW TO USE THIS PROGRAM
 You need a .txt file with initial coordinates for your atoms. If you got this
-from me or from github, you can use stargenerator to do this.
+from me or from github, you can use startgenerator to do this.
 That program works best with integer particle numbers with integer cube roots,
 so this program uses similar values of N.
 This program asks for one input from the user: the number of times
@@ -26,11 +26,6 @@ see what happens to the PE.
 #define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
 
 struct particle particles[N];
-/******************************************************************************
-TO DO:
-6. ???
-7. profit
-******************************************************************************/
 
 /************************
 distfinder finds the distance between any two distinct particles of
@@ -104,19 +99,18 @@ particle a random distance away from its current position
 void rand_p_mover()
 {
     int i,p;
-    //below, the two "random variables" are chosen so they are integers
-    //between 0 and the box length. They are then divided to give a 
-    //double, which (I think) allows for more states of the system
-    p = rand() / (RAND_MAX / N + 1);
-    i = rand() / (RAND_MAX / 4);
-    double delta;
-    delta = rand()/(RAND_MAX+ 1.0);
+    double delta
+    p = rand() / (RAND_MAX / N + 1);//p is a random int between 0 and N
+    i = rand() / (RAND_MAX / 4);//i is a random int between 0 and 3
+    delta = rand()/(RAND_MAX+ 1.0);//delta is a random int between 0 and 1
     //we can't leave the box (nor do we want to be at the surface,)
-    //so if dog makes p go out of our bounds
-    //we re-roll until we get an acceptable value 
+    //so p tries to escape V
+    //we multiply by a new random int between 0 and 1 to correct it
+    //this is probably the wrong way to do it
     particles[p].x[i] += delta;
     if(particles[p].x[i] >= L) 
     { 
+        delta = rand()/(RAND_MAX + 1.0);
         particles[p].x[i] =  particles[p].x[i]* delta;
     }
     return;
@@ -131,9 +125,9 @@ if the result of the exponential is greater than the random number, it returns 0
 ********************/
 bool E_checker(double cpe, double npe)
 {
-    double prob,beta,k,deltaE;
+    double deltaE,guess,k,beta,prob;
     deltaE = cpe - npe; //delta between the "current" PE and the "new" PE
-    double guess=((double)rand()/(double)RAND_MAX);
+    guess=((double)rand()/(double)RAND_MAX);
     k = 1.3806485279 * pow(10,-23);//Boltzmann constant in joules per kelvin
     beta = 1/(k*T);//temperature as defined above
     prob = exp(-1*beta*deltaE);
@@ -219,6 +213,22 @@ int main()
         {
             continue;
             cpe = cpe;
+        }
+        if(c == (.1*m))
+        {
+            printf("10 percent of the way there!");
+        }
+        if(c == (.25*m))
+        {
+            printf("25 percent of the way there!");
+        }
+        if(c == (.5*m))
+        {
+            printf("50 percent of the way there!");
+        }
+        if(c == (.75*m))
+        {
+            printf("75 percent of the way there!");
         }
     }
     fclose(energies);
