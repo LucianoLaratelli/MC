@@ -1,16 +1,8 @@
-#include <stdio.H>
-#include <math.H>
-#include <stdlib.H>
-#include <stdbool.H>
-
-struct particle
-{
-    double x[3];
-};
-
-double sigma, epsilon, m;
 /****************************************************************************
-HOW TO USE THIS PROGRAM
+BASIC NVT MONTE CARLO
+*****************************************************************************  
+HOW TO USE THIS PROGRAM:
+************************
 You need a .txt file with initial coordinates for your atoms. If you got this
 from me or from github, you can use startgenerator to do this.
 That program works best with integer particle numbers with integer cube roots,
@@ -21,6 +13,23 @@ see what happens to the PE.
 
 -Luciano Laratelli
 ***************************************************************************/
+
+/***************************************************************************
+CURRENT ISSUES:
+
+Seems like the maximum number of frames possible hovers around 70, regardless of the number of tries. Probably an error in implementation.
+***************************************************************************/
+
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdbool.h>
+
+struct particle
+{
+    double x[3];
+};
+
 #define N 27//number of particles
 #define T 300//kelvin
 #define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
@@ -73,6 +82,17 @@ double PEfinder()
             if(b!=c)
             {
                 r = distfinder(b,c);
+                if(fabs(r) > 0.5 * L)//this is for boundary conditions
+                {
+                    if(r > 0)
+                    {
+                        r -= L;
+                    }
+                    if(r < 0)
+                    {
+                        r += L;
+                    }
+                }
                 rinv = 1/r;
                 //formula has sigma/r; this is a bit easier to work with
                 r2 = rinv * rinv;
@@ -92,14 +112,39 @@ double PEfinder()
     return pe;
 }
 
+/**********************
+Positionchecker is called by rand_p_mover.
+it looks at every particle p in the system; if rand_p moves p out of the box,
+positionchecker makes it so that the particle "pops in" from the other side
+of the box. think pacman or snake.
+**********************/
+void positionchecker(int id_a)
+{
+    int i;
+    for(i=0;i<3;i++)
+    {
+        if(particles[id_a].x[i] > L)
+        {
+            particles[id_a].x[i] -= L;
+        }
+        if(particles[id_a].x[i] < 0)
+        {
+            particles[id_a].x[i] += L;
+        }
+    }
+    return;
+}
+
 /*********************
-this next function is part of the monte carlo method; it moves a random 
-particle a random distance away from its current position
+this next function is the first step of the monte carlo method; 
+it moves a random particle a random distance away from its current position
+and then calls positionchecker to make sure boundary conditions are
+being considered
 *********************/
 void rand_p_mover()
 {
     int i,p;
-    double delta
+    double delta;
     p = rand() / (RAND_MAX / N + 1);//p is a random int between 0 and N
     i = rand() / (RAND_MAX / 4);//i is a random int between 0 and 3
     delta = rand()/(RAND_MAX+ 1.0);//delta is a random int between 0 and 1
@@ -108,11 +153,7 @@ void rand_p_mover()
     //we multiply by a new random int between 0 and 1 to correct it
     //this is probably the wrong way to do it
     particles[p].x[i] += delta;
-    if(particles[p].x[i] >= L) 
-    { 
-        delta = rand()/(RAND_MAX + 1.0);
-        particles[p].x[i] =  particles[p].x[i]* delta;
-    }
+    positionchecker(p);
     return;
 }
 
@@ -130,7 +171,7 @@ bool E_checker(double cpe, double npe)
     guess=((double)rand()/(double)RAND_MAX);
     k = 1.3806485279 * pow(10,-23);//Boltzmann constant in joules per kelvin
     beta = 1/(k*T);//temperature as defined above
-    prob = exp(-1*beta*deltaE);
+    prob = exp(-beta*deltaE);
     if(prob > guess)
     {
         return true;
@@ -159,6 +200,7 @@ void starting_positions()
     {
         fscanf(startingpositions,"%lf %lf %lf\n", &particles[p].x[0],&particles[p].x[1],&particles[p].x[2]);
     }
+    fclose(startingpositions);
     return;
 }
 
@@ -214,22 +256,7 @@ int main()
             continue;
             cpe = cpe;
         }
-        if(c == (.1*m))
-        {
-            printf("10 percent of the way there!");
-        }
-        if(c == (.25*m))
-        {
-            printf("25 percent of the way there!");
-        }
-        if(c == (.5*m))
-        {
-            printf("50 percent of the way there!");
-        }
-        if(c == (.75*m))
-        {
-            printf("75 percent of the way there!");
-        }
+       
     }
     fclose(energies);
     fclose(positions);
