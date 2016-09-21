@@ -17,7 +17,6 @@ see what happens to the PE.
 /***************************************************************************
 CURRENT ISSUES:
 
-Energy is way too high.
 A fundamental misunderstanding of the monte carlo method.
 ***************************************************************************/
 
@@ -25,7 +24,7 @@ A fundamental misunderstanding of the monte carlo method.
 #include <math.h>
 #include <stdlib.h>
 #include <stdbool.h>
-
+#include <time.h>
 struct particle
 {
     double x[3];
@@ -37,9 +36,9 @@ struct move_values
     double delta, gamma, zeta;
 };
 
-const int N = 2; //number of particles
-const int T = 300; //kelvin
-const int L = 5; //length of one side of the cube, L = sigma
+const int N = 1000; //number of particles
+const int T = 50; //kelvin; 
+const int L = 500; //length of one side of the cube, L = sigma
 
 struct particle particles[N];
 struct move_values move;
@@ -136,6 +135,12 @@ void positionchecker(int id_a)
     return;
 }
 
+double uniformrand()
+{
+    double r = random();
+    return r / ((double)RAND_MAX + 1);
+}
+
 /*********************
 this next function is the first step of the monte carlo method; 
 it moves a random particle a random distance away from its current position
@@ -146,9 +151,9 @@ void rand_p_mover()
     int i,p;
     double delta,gamma,zeta;
     p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
-    delta = (rand()/(RAND_MAX)) - 0.5; //a random float between -0.5 and 0.5
-    gamma = (rand()/(RAND_MAX)) - 0.5; //same as above
-    zeta = (rand()/(RAND_MAX)) - 0.5; //same as above
+    delta = uniformrand() - 0.5; //a random float between -0.5 and 0.5
+    gamma = uniformrand() - 0.5;   //same as above
+    zeta = uniformrand() - 0.5;  //same as above
     move.p = p;
     move.delta = delta;
     move.gamma = gamma;
@@ -191,7 +196,9 @@ is accepted
 bool E_checker(double cpe, double npe)
 {
     double deltaE,guess,k,beta,prob; //no ints in this function, no sir!
-    deltaE = cpe - npe; // between the "current" PE and the "new" PE
+    deltaE = npe-cpe; // between the "current" PE and the "new" PE
+    //DELTA between two things is FINAL MINUS INITIAL
+    //NOT THE OTHER WAY AROUND
     guess=((double)rand()/(double)RAND_MAX);
     k = 1; //Boltzmann constant in the natural units for the system
     beta = 1/(k*T); //temperature as set above
@@ -211,7 +218,6 @@ starting_positions takes a .txt file with coordinates
 for the starting positions of the particles in this simulation.
 each line of the file is an (x,y,z) with format x y z\n
 *******************/
-/*
 void starting_positions()
 {
     int p;
@@ -223,7 +229,7 @@ void starting_positions()
     }
     fclose(startingpositions);
     return;
-}*/
+}
 
 /******************
 output_to_file lives up to its name;
@@ -233,7 +239,8 @@ void output_to_file()
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
-    int p;
+    int p;    
+    fprintf(positions, "%d \n\n",N);
     for(p=0;p<N;p++)
     {
         fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
@@ -246,6 +253,7 @@ void output_to_file()
 
 int main()
 {
+    clock_t begin = clock();
     FILE * positions; 
     positions = fopen("positions.xyz","w");
     fclose(positions);
@@ -257,14 +265,8 @@ int main()
     int m; //maximum number of tries
     printf("How many tries do you want to do?\n"); //user-directed!
     scanf("%d", &m);
-    //starting_positions();
-    particles[0].x[0] = 0;
-    particles[0].x[1] = 0;
-    particles[0].x[2] = 0;
-    particles[1].x[0] = 2;
-    particles[1].x[1] = 2;
-    particles[1].x[2] = 2;
-    fprintf(positions, "%d \n\n",N);
+    starting_positions();
+    output_to_file();
     cpe = PEfinder(); //"current potential energy"
     for(c=0;c<m;c++)
     {
@@ -282,13 +284,16 @@ int main()
         else //hopefully self-explanatory
         {
             //have to actually reject the move!
+            output_to_file(); //for just the positions
             rand_p_unmover(); //returns the system to the previous state
+            fprintf(energies,"%d %f\n", c, cpe); //the new one
             continue;
         }
        
     }
     fclose(energies);
-    
-    printf("Done! Hope it worked out.\n"); //it never does
+    clock_t end = clock();
+    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
+    printf("Done! Hope it worked out. This run took %f seconds.\n",time_spent); //it never does
     return 0;
 }
