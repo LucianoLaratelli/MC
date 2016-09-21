@@ -5,7 +5,7 @@ HOW TO USE THIS PROGRAM:
 ************************
 You need a .txt file with initial coordinates for your atoms. If you got this
 from me or from github, you can use startgenerator to do this.
-That program works best with integer particle numbers with integer cube roots,
+That program only works well with particle numbers with integer cube roots,
 so this program uses similar values of N.
 This program asks for one input from the user: the number of times
 it is to "try" - that is, move a particle p some random displacement and 
@@ -17,7 +17,8 @@ see what happens to the PE.
 /***************************************************************************
 CURRENT ISSUES:
 
-Seems like the maximum number of frames possible hovers around 70, regardless of the number of tries. Probably an error in implementation.
+Energy is way too high.
+A fundamental misunderstanding of the monte carlo method.
 ***************************************************************************/
 
 #include <stdio.h>
@@ -30,9 +31,9 @@ struct particle
     double x[3];
 };
 
-#define N 27//number of particles
-#define T 300//kelvin
-#define L 20//length of one side of the cube, 20L = 20 atomic radii I guess
+const int N = 27; //number of particles
+const int T = 300; //kelvin
+const int L = 5; //length of one side of the cube, L = sigma 
 
 struct particle particles[N];
 
@@ -44,11 +45,12 @@ calculate the potential energy in PEfinder using the lennard-jones potential
 double distfinder(int id_a, int id_b)
 {
     int i;
-    double dist, dist2;
-    dist2 = 0;//clearing junk from memory
+    double dist, dist2,delta;
+    dist2 = 0; //clearing junk from memory just in case
     for(i=0;i<3;i++)
     {
-        dist2 += pow(particles[id_a].x[i]-particles[id_b].x[i],2);
+        delta = particles[id_a].x[i] - particles[id_b].x[i];
+        dist2 += delta * delta;
         //finds distance coordinate by coordinate,
         //keeping the sum of the squares in memory
     }
@@ -60,16 +62,15 @@ double distfinder(int id_a, int id_b)
 /**********************
 PEfinder finds the total potential energy between every particle
 by using the lennard-jones potential
-values of one are used for sigma and epsilon due to laziness but those
-can be changed if you need a better model
+values of one are used for sigma and epsilon 
 **********************/
 double PEfinder()
 {
-    double sigma, epsilon, r;
+    double sigma, epsilon, r,pe;
     double s2,s4,s6,s12;//exponents of sigma
     double rinv,r2,r4,r6,r12;//exponents of r
     double sor6,sor12;
-    int b,c,pe;
+    int b,c;
     epsilon = 1; //this can be changed to experimental values
     sigma = 1; // same as above
     s2 = sigma * sigma;
@@ -77,38 +78,35 @@ double PEfinder()
     s12 = s6*s6;
     for(b=0;b<N;b++)
     {
-        for(c=0;c<N;c++)
+        for(c=b+1;c<N;c++)
         {
-            if(b!=c)
+            r = distfinder(b,c);
+            if(fabs(r) > 0.5 * L) //this is for boundary conditions
             {
-                r = distfinder(b,c);
-                if(fabs(r) > 0.5 * L)//this is for boundary conditions
+                if(r > 0)
                 {
-                    if(r > 0)
-                    {
-                        r -= L;
-                    }
-                    if(r < 0)
-                    {
-                        r += L;
-                    }
+                    r -= L;
                 }
-                rinv = 1/r;
-                //formula has sigma/r; this is a bit easier to work with
-                r2 = rinv * rinv;
-                r6 = r2*r2*r2;
-                r12 = r6* r6;
-                sor6 = r6 * s6;
-                sor12 = r12 * s12;
-                //makes it harder to mess up the formula, h/t adam for the tip
-                pe += 0.5 * (4 * epsilon * (sor12-sor6));
-                // each sum does half the PE per pair
-                // because the way this loop is written 
-                // has each pair included twice
-                // typing a "0.5 *" is easier than thinking about loops
+                if(r < 0)
+                {
+                    r += L;
+                }
             }
+            rinv = 1/r;
+            //formula has sigma/r; this is a bit easier to work with
+            r2 = rinv * rinv;
+            r6 = r2*r2*r2;
+            r12 = r6* r6;
+            sor6 = r6 * s6;
+            sor12 = r12 * s12;
+            //makes it harder to mess up the formula, h/t adam for the tip
+            pe += 0.5 * (4 * epsilon * (sor12-sor6));
+            // each sum does half the PE per pair
+            // because the way this loop is written 
+            // has each pair included twice
+            // typing a "0.5 *" is easier than thinking about loops
         }
-    }           
+    }
     return pe;
 }
 
@@ -138,39 +136,37 @@ void positionchecker(int id_a)
 /*********************
 this next function is the first step of the monte carlo method; 
 it moves a random particle a random distance away from its current position
-and then calls positionchecker to make sure boundary conditions are
-being considered
+and then calls positionchecker to enforce boundary conditions
 *********************/
 void rand_p_mover()
 {
     int i,p;
     double delta;
-    p = rand() / (RAND_MAX / N + 1);//p is a random int between 0 and N
-    i = rand() / (RAND_MAX / 4);//i is a random int between 0 and 3
-    delta = rand()/(RAND_MAX+ 1.0);//delta is a random int between 0 and 1
-    //we can't leave the box (nor do we want to be at the surface,)
-    //so p tries to escape V
-    //we multiply by a new random int between 0 and 1 to correct it
-    //this is probably the wrong way to do it
+    p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
+    i = rand() / (RAND_MAX / 4); //i is a random int between 0 and 3
+    delta = rand()/(RAND_MAX+ 1.0); //delta is a random float between 0 and 1
+    //we can't leave the box (nor do we want to be at the surface;)
+    //if p manages to escape the box, positionchecker() bosses it around 
     particles[p].x[i] += delta;
     positionchecker(p);
     return;
 }
 
 /********************
-this is the second part of the monte carlo method; it takes the PE from PE finderfor the current configuration and subtracts it from the previous configuration. 
-it substitutes that delta E into the e^-beta equation and compares the value of
+this is the second part of the monte carlo method; it takes the PE from PE finder
+for the current configuration and subtracts it from the previous configuration. 
+it substitutes delta E into the e^-beta equation and compares the value of
 THAT exponential to a random number between 0 and 1
-if the result of the exponential is less than the random number, it returns 1
-if the result of the exponential is greater than the random number, it returns 0
+if the result of the exponential is greater than the random number, the change
+is accepted
 ********************/
 bool E_checker(double cpe, double npe)
 {
-    double deltaE,guess,k,beta,prob;
-    deltaE = cpe - npe; //delta between the "current" PE and the "new" PE
+    double deltaE,guess,k,beta,prob; //no ints in this function, no sir!
+    deltaE = cpe - npe; // between the "current" PE and the "new" PE
     guess=((double)rand()/(double)RAND_MAX);
-    k = 1.3806485279 * pow(10,-23);//Boltzmann constant in joules per kelvin
-    beta = 1/(k*T);//temperature as defined above
+    k = 1.3806485279 * pow(10,-23); //Boltzmann constant in joules per kelvin
+    beta = 1/(k*T); //temperature as defined above
     prob = exp(-beta*deltaE);
     if(prob > guess)
     {
@@ -180,21 +176,17 @@ bool E_checker(double cpe, double npe)
     {
         return false;
     }
-
 }
 
 /*******************
 starting_positions takes a .txt file with coordinates 
-for the starting positions of the atoms in this simulation.
-The first line of the file is the x coordinate of particle p
-the second line of the file is the y coordinate of particle p
-the third line of the file is the z coordinate of particle p
-etc.
+for the starting positions of the particles in this simulation.
+each line of the file is an (x,y,z) with format x y z\n
 *******************/
 void starting_positions()
 {
     int p;
-    FILE * startingpositions;//any .txt file
+    FILE * startingpositions; //any .txt file
     startingpositions = fopen("startingpositions.txt", "r");
     for(p=0;p<N;p++)
     {
@@ -205,56 +197,54 @@ void starting_positions()
 }
 
 /******************
-output_to_file lives up to its name. It ouputs two things:
-the coordinates of the particles at every frame into an .xyz file;
-the total energy of the system at every frame
+output_to_file lives up to its name;
+It ouputs the coordinates of the particles at every frame into an .xyz file
 *******************/
 void output_to_file()
 {
-    FILE * positions;//this is the .xyz file
+    FILE * positions;
     positions = fopen("positions.xyz","a");
-    int p,n;
+    int p;
     for(p=0;p<N;p++)
     {
         fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
         //hoping this works lmao
+        //update: it works!
     }
     return;
 }
 
 int main()
 {
-    FILE * positions;//this is the .xyz file
+    FILE * positions; 
     positions = fopen("positions.xyz","w");
     double cpe, npe;
-    FILE * energies; //this is the .txt file
+    FILE * energies; 
     energies = fopen("energies.dat","w");
     bool guess; 
-    int c;//count
-    int m;//maximum number of tries
-    printf("How many tries do you want to do?\n");//user-directed!
+    int c; //count
+    int m; //maximum number of tries
+    printf("How many tries do you want to do?\n"); //user-directed!
     scanf("%d", &m);
     starting_positions();
     fprintf(positions, "%d \n\n",N);
-    cpe = PEfinder();//"current potential energy"
+    cpe = PEfinder(); //"current potential energy"
     for(c=0;c<m;c++)
     {
-        cpe = cpe;
-        rand_p_mover();//monte carlo step one
-        npe = PEfinder();//"new potential"
-        guess = E_checker(cpe,npe);//sets guess to bool, step two of monte carlo
-        if (guess == true)//if new energy is less than the random number
+        rand_p_mover(); //monte carlo step one
+        npe = PEfinder(); //"new potential"
+        guess = E_checker(cpe,npe); //sets guess to bool, step two of monte carlo
+        if (guess == true) //if new energy is less than the random number, accept
         {
-            output_to_file();//does positions
-            cpe = npe;
-            fprintf(energies,"%d %f\n", c, cpe);
+            output_to_file(); //for just the positions
+            cpe = npe; //updates energy
+            fprintf(energies,"%d %f\n", c, cpe); //the new one
             // if the new energy is accepted, it becomes the 
             // "current" energy for the next loop 
         }
         else //hopefully self-explanatory
         {
             continue;
-            cpe = cpe;
         }
        
     }
