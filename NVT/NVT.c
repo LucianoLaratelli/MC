@@ -25,6 +25,7 @@ A fundamental misunderstanding of the monte carlo method.
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+
 struct particle
 {
     double x[3];
@@ -37,7 +38,7 @@ struct move_values
 };
 
 const int N = 1000; //number of particles
-const int T = 50; //kelvin; 
+const int T = 5; //kelvin; 
 const int L = 500; //length of one side of the cube, L = sigma
 
 struct particle particles[N];
@@ -258,6 +259,7 @@ int main()
     positions = fopen("positions.xyz","w");
     fclose(positions);
     double cpe, npe;
+    double sum, average;
     FILE * energies; 
     energies = fopen("energies.dat","w");
     bool guess; 
@@ -268,6 +270,7 @@ int main()
     starting_positions();
     output_to_file();
     cpe = PEfinder(); //"current potential energy"
+    sum = cpe;
     for(c=0;c<m;c++)
     {
         rand_p_mover(); //monte carlo step one
@@ -278,22 +281,25 @@ int main()
             output_to_file(); //for just the positions
             cpe = npe; //updates energy
             fprintf(energies,"%d %f\n", c, cpe); //the new one
+            sum += cpe;
             // if the new energy is accepted, it becomes the 
             // "current" energy for the next loop 
         }
         else //hopefully self-explanatory
         {
             //have to actually reject the move!
+            rand_p_unmover(); 
             output_to_file(); //for just the positions
-            rand_p_unmover(); //returns the system to the previous state
+            sum += cpe;
             fprintf(energies,"%d %f\n", c, cpe); //the new one
             continue;
         }
        
     }
+    average = sum / (m + 1);
     fclose(energies);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("Done! Hope it worked out. This run took %f seconds.\n",time_spent); //it never does
+    printf("Done! Hope it worked out. \nThis run took %f seconds.\nThe average energy o was %f.\n Have a nice day!\n",time_spent, average); //it never does
     return 0;
 }
