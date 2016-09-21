@@ -11,6 +11,15 @@ struct particle
 double sigma, epsilon, m;
 /****************************************************************************
 HOW TO USE THIS PROGRAM
+You need a .txt file with initial coordinates for your atoms. If you got this
+from me or from github, you can use stargenerator to do this.
+That program works best with integer particle numbers with integer cube roots,
+so this program uses similar values of N.
+This program asks for one input from the user: the number of times
+it is to "try" - that is, move a particle p some random displacement and 
+see what happens to the PE.
+
+-Luciano Laratelli
 ***************************************************************************/
 #define N 27//number of particles
 #define T 300//kelvin
