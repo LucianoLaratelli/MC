@@ -23,16 +23,27 @@ int main()
     V = pow(N,.3333333333333);
     printf("How far should each particle be away from its neighbors?\n");
     scanf("%d", &s);
-    for(i=0;i<V;i++)
+    if(N == 2)
     {
-        for(j=0;j<V;j++)
+        for(i=0;i<N;i++)
         {
-            for(k=0;k<V;k++)
+            int is = i * s;
+            fprintf(startingpositions, "%d %d %d\n", is, is, is);
+        }
+    }
+    else
+    {
+        for(i=0;i<V;i++)
+        {
+            for(j=0;j<V;j++)
             {
-                int is = i*s;
-                int js = j*s;
-                int ks = k*s;
-                fprintf(startingpositions,"%d %d %d\n", is, js, ks);
+                for(k=0;k<V;k++)
+                {
+                    int is = i*s;
+                    int js = j*s;
+                    int ks = k*s;
+                    fprintf(startingpositions,"%d %d %d\n", is, js, ks);
+                }
             }
         }
     }

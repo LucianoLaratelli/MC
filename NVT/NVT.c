@@ -15,7 +15,8 @@ luciano.e.laratelli@outlook.com
 /***************************************************************************
 CURRENT ISSUES:
 ***************
-Energy might be weird 
+Energies.dat does not have correct numbers for energy. Must be a stupid issue with the
+fprintf statement.
 ***************************************************************************/
 
 #include <stdio.h>
@@ -44,8 +45,15 @@ If you know why this is the case, please let me know!
 
 //this is the NVT part
 const int N = 1000; //number of particles
-const int T = 5; //kelvin; 
-const int L = 500; //length of one side of the cube, L = sigma
+const int T = 10; //kelvin; 
+const int L = 20; //length of one side of the cube, L = sigma
+
+
+/*
+#define N 1000;
+#define T 10;
+#define L 20;
+*/
 
 //we declare our structs so we can use them to do our bidding
 struct particle particles[N];
@@ -102,7 +110,7 @@ double distfinder(int id_a, int id_b)
     return dist;
 }
 
-/**********************
+/***m*******************
 PEfinder finds the total potential energy between every particle
 by using the lennard-jones potential
 lennard-jones is one person, if you were wondering
@@ -114,8 +122,8 @@ double PEfinder()
     double rinv,r2,r4,r6,r12;//exponents of r
     double sor6,sor12;
     int b,c;
-    epsilon = 1; //this can be changed to experimental values
-    sigma = 1; // same as above
+    epsilon = 1.0; //this can be changed to experimental values
+    sigma = 1.0; // same as above
     s2 = sigma * sigma;
     s6 = s2*s2*s2;
     s12 = s6*s6;
@@ -145,6 +153,7 @@ it looks at every particle p in the system; if rand_p moves p out of the box,
 positionchecker makes it so that the particle "pops in" from the other side
 of the box. think pacman or snake.
 **********************/
+
 void positionchecker(int id_a)
 {
     int i;
@@ -194,7 +203,7 @@ void rand_p_mover()
     particles[p].x[1] += gamma; //same
     particles[p].x[2] += zeta; //same
     //we can't leave the box (nor do we want to be at the surface;)
-    //if p manages to escape the box, positionchecker() bosses it around 
+    //if p manages to escape the box, positionchecker bosses it around 
     positionchecker(p);
     return;
 }
@@ -207,24 +216,33 @@ THAT exponential to a random number between 0 and 1
 if the result of the exponential is greater than the random number, the change
 is accepted
 ********************/
-bool E_checker(double cpe, double npe)
+bool E_checker(double cpe, double npe,int c)
 {
+    FILE * energies;
+    energies = fopen("energies.dat","a");
     double deltaE,guess,k,beta,prob; //no ints in this function, no sir!
     deltaE = npe-cpe; // between the "new" PE and the "current" one
     //DELTA between two things is FINAL MINUS INITIAL
     //NOT THE OTHER WAY AROUND
     guess=((double)rand()/(double)RAND_MAX);
-    k = 1; //Boltzmann constant in the natural units for the system
+    //k = 1; //Boltzmann constant in the natural units for the system
+    k = 1.3806485279 * pow(10,-23);
     beta = 1/(k*T); //temperature as set above
-    prob = exp(-beta*deltaE);
+    prob = exp(-1*beta*deltaE);
     if(prob > guess)
     {
+        printf("if hello!\n");
+        fprintf(energies,"%d %f\n",c, npe); 
         return true;
     }
     else
     {
+        printf("else hello!\n");
+        fprintf(energies,"%d %f\n",c, cpe); 
         return false;
     }
+    printf("hello!");
+    fclose(energies);
 }
 
 /****************
@@ -265,12 +283,12 @@ int main()
 {
     clock_t begin = clock(); //so we know how long our program takes
     FILE * positions; 
+    FILE * energies; 
     positions = fopen("positions.xyz","w");
+    energies = fopen("energies.dat","w");
     fclose(positions);
     double cpe, npe;
-    double sum, average; //the sum helps us find the average
-    FILE * energies; 
-    energies = fopen("energies.dat","w");
+    double sum, average; //the sum lets us find the average
     bool guess; 
     int c; //count
     int m; //maximum number of tries
@@ -279,33 +297,33 @@ int main()
     starting_positions(); //read in starting positions
     output_to_file(); //write them to a file
     cpe = PEfinder(); //"current potential energy"
+    fprintf(energies,"0 %f\n", cpe); //
+    fclose(energies);
     sum = cpe; //the average has to include the initial starting PE
-    for(c=0;c<m;c++)
+    for(c=1;c<m;c++)
     {
         rand_p_mover(); //monte carlo step one
         npe = PEfinder(); //"new potential energy"
-        guess = E_checker(cpe,npe); 
+        guess = E_checker(cpe,npe,c); 
         if (guess == true) //if new energy is less than the random number, accept
         {
             output_to_file(); //for just the positions
             cpe = npe; //updates energy
-            fprintf(energies,"%d %f\n", c, cpe); //the new one
             sum += cpe;
         }
         else //hopefully self-explanatory
         {
             //have to actually reject the move!
             rand_p_unmover(); //we reject the move by undoing it
-            output_to_file(); //for just the positions
+            output_to_file(); //for just the positions (from before the move, i.e.
+                              //system stays the same for another frame
             sum += cpe;
-            fprintf(energies,"%d %f\n", c, cpe); //the old one
             continue;
         }
     }
-    average = sum / (m + 1); //again, hopefully self explanatory
-    fclose(energies);
+    average = sum / (m); //again, hopefully self explanatory
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
-    printf("Done! Hope it worked out. \nThis run took %f seconds.\nThe average energy o was %f.\n Have a nice day!\n",time_spent, average); //it never does
+    printf("Done! Hope it worked out. \nThis run took %f seconds.\nThe average energy was %f.\nHave a nice day!\n",time_spent, average); //it never does
     return 0;
 }
