@@ -15,14 +15,14 @@ int main()
 {
     FILE * startingpositions;
     startingpositions = fopen("startingpositions.txt", "w");
-    int N,s;//particles, spacing, max (length), volume
-    double V,l;
+    int N;//particles, spacing, max (length), volume
+    double V,l,s;
     int i,j,k;//loop variables
     printf("How many particles do you want?\n");
     scanf("%d", &N);
     V = pow(N,.3333333333333);
     printf("How far should each particle be away from its neighbors?\n");
-    scanf("%d", &s);
+    scanf("%lf", &s);
     if(N == 2)
     {
         for(i=0;i<N;i++)
@@ -39,10 +39,10 @@ int main()
             {
                 for(k=0;k<V;k++)
                 {
-                    int is = i*s;
-                    int js = j*s;
-                    int ks = k*s;
-                    fprintf(startingpositions,"%d %d %d\n", is, js, ks);
+                    double is = i*s;
+                    double js = j*s;
+                    double ks = k*s;
+                    fprintf(startingpositions,"%f %f %f\n", is, js, ks);
                 }
             }
         }
