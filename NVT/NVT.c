@@ -5,24 +5,30 @@ HOW TO USE THIS PROGRAM:
 ************************
 You need a .txt file with initial coordinates for your atoms. If you got this
 from me, you can use startgenerator to do this.
-startgenerator only works well with particle numbers with integer cube roots,
-so this program has that constraint as well. 
+startgenerator only works well with particle numbers with integer cube roots (or
+2 particles,) so this program has that constraint as well. 
 
 -Luciano Laratelli
 luciano.e.laratelli@outlook.com
 ***************************************************************************/
-
+/**************
+TO DO:
+SEED RANDOM NUMBER GENERATOR SOMEHOW
+print out accepted distances to debug
+stick one at the origin and move the other's x coordinate only
+************/
 /***************************************************************************
 CURRENT ISSUES:
 ***************
 Energies.dat does not have correct numbers for energy. Must be a stupid issue with the
 fprintf statement.
+    UPDATE: it's worse than I thought??
 ***************************************************************************/
 
-#include <stdio.h>
 #include <math.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <time.h>
 
 struct particle
@@ -44,7 +50,7 @@ If you know why this is the case, please let me know!
 ****************/
 
 //this is the NVT part
-const int N = 1000; //number of particles
+const int N = 2; //number of particles
 const int T = 10; //kelvin; 
 const int L = 20; //length of one side of the cube, L = sigma
 
@@ -85,28 +91,21 @@ calculate the potential energy in PEfinder
 double distfinder(int id_a, int id_b)
 {
     int i;
-    double dist, dist2,delta;
-    dist2 = 0; //clearing junk from memory just in case
+    double dist, delta2,delta;
+    delta2 = 0; //clearing junk from memory just in case
     for(i=0;i<3;i++)
     {
         delta = particles[id_a].x[i] - particles[id_b].x[i];
-        if(fabs(delta) > 0.5 * L) //this is for boundary conditions
-            {
-                if(delta > 0)
-                {
-                    delta -= L;
-                }
-                if(delta < 0)
-                {
-                    delta += L;
-                }
-            }
-        dist2 += delta * delta;
+        delta2 += delta * delta;
         //finds distance coordinate by coordinate,
         //keeping the sum of the squares in memory
     }
-    dist = sqrt(dist2); 
+    dist = sqrt(delta2); 
     //distance formula says dist = sqrt of the sum of the squares
+    if(dist > 0.5 * L) //this is for the periodic boundary conditions
+    {
+        dist -= L;//minimum image convention
+    }
     return dist;
 }
 
@@ -148,10 +147,13 @@ double PEfinder()
 }
 
 /**********************
-Positionchecker is called by rand_p_mover.
+Positionchecker is called by rand_p_mover and rand_p_unmover
 it looks at every particle p in the system; if rand_p moves p out of the box,
 positionchecker makes it so that the particle "pops in" from the other side
 of the box. think pacman or snake.
+
+Why does position checker have allowed values of [0,20) ? The distinction is arbitrary,
+but one of the two "edges" must be excluded from the allowed values.
 **********************/
 
 void positionchecker(int id_a)
@@ -159,7 +161,7 @@ void positionchecker(int id_a)
     int i;
     for(i=0;i<3;i++)
     {
-        if(particles[id_a].x[i] > L)
+        if(particles[id_a].x[i] >= L)
         {
             particles[id_a].x[i] -= L;
         }
@@ -189,7 +191,7 @@ and then calls positionchecker to enforce boundary conditions
 *********************/
 void rand_p_mover()
 {
-    int i,p;
+    int p;
     double delta,gamma,zeta; //random greek letter variables with no specific meaning
     p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
     delta = uniformrand() - 0.5; //a random float between -0.5 and 0.5
@@ -224,25 +226,29 @@ bool E_checker(double cpe, double npe,int c)
     deltaE = npe-cpe; // between the "new" PE and the "current" one
     //DELTA between two things is FINAL MINUS INITIAL
     //NOT THE OTHER WAY AROUND
+    if(deltaE < 0)//if the new energy is lower than the old energy, we always accept it
+    {
+        fprintf(energies,"%d %f\n",c, npe); 
+        fclose(energies);
+        return true;
+    }
     guess=((double)rand()/(double)RAND_MAX);
-    //k = 1; //Boltzmann constant in the natural units for the system
-    k = 1.3806485279 * pow(10,-23);
+    k = 1; //Boltzmann constant in the natural units for the system
     beta = 1/(k*T); //temperature as set above
     prob = exp(-1*beta*deltaE);
     if(prob > guess)
     {
-        printf("if hello!\n");
         fprintf(energies,"%d %f\n",c, npe); 
+        fclose(energies);
         return true;
     }
     else
     {
-        printf("else hello!\n");
         fprintf(energies,"%d %f\n",c, cpe); 
+        fclose(energies);
         return false;
     }
-    printf("hello!");
-    fclose(energies);
+
 }
 
 /****************
@@ -255,13 +261,15 @@ void rand_p_unmover()
     p = move.p; //gotta remember which particle we want to move back!
     particles[p].x[0] -= move.delta;
     particles[p].x[1] -= move.gamma;
-    particles[p].x[1] -= move.zeta;
+    particles[p].x[2] -= move.zeta;
+    positionchecker(p);
     return;
 }
 
 /******************
 output_to_file lives up to its name;
-It ouputs the coordinates of the particles at every frame into an .xyz file
+It ouputs the coordinates of the particles at every frame into an .xyz file, so we 
+can visualize the system using software like VMD
 *******************/
 void output_to_file()
 {
@@ -284,9 +292,9 @@ int main()
     clock_t begin = clock(); //so we know how long our program takes
     FILE * positions; 
     FILE * energies; 
-    positions = fopen("positions.xyz","w");
-    energies = fopen("energies.dat","w");
-    fclose(positions);
+    positions = fopen("positions.xyz","w");//we open and "w"rite the file to wipe it
+    energies = fopen("energies.dat","w");//same as above
+    fclose(positions);//don't need this for now so we close it
     double cpe, npe;
     double sum, average; //the sum lets us find the average
     bool guess; 
@@ -298,7 +306,7 @@ int main()
     output_to_file(); //write them to a file
     cpe = PEfinder(); //"current potential energy"
     fprintf(energies,"0 %f\n", cpe); //
-    fclose(energies);
+    fclose(energies);//won't need this until later so we close it
     sum = cpe; //the average has to include the initial starting PE
     for(c=1;c<m;c++)
     {
@@ -309,7 +317,7 @@ int main()
         {
             output_to_file(); //for just the positions
             cpe = npe; //updates energy
-            sum += cpe;
+            sum += cpe;//accounting
         }
         else //hopefully self-explanatory
         {
