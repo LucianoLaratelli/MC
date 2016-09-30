@@ -51,7 +51,7 @@ If you know why this is the case, please let me know!
 
 //this is the NVT part
 const int N = 2; //number of particles
-const int T = 10; //kelvin; 
+const double T = .00010; //kelvin; 
 const int L = 20; //length of one side of the cube, L = sigma
 
 
@@ -274,16 +274,24 @@ can visualize the system using software like VMD
 void output_to_file()
 {
     FILE * positions;
+    FILE * translatedp;
     positions = fopen("positions.xyz","a");
+    translatedp = fopen("translatedpositions.xyz","a");
+    double orgdist;
     int p;    
     fprintf(positions, "%d \n\n",N);
+    fprintf(translatedp, "%d \n\n",N);
     for(p=0;p<N;p++)
     {
         fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
         //hoping this works lmao
         //update: it works!
     }
+    orgdist = distfinder(0,1) + 14;
+    fprintf(translatedp,"H 10 10 10\n");
+    fprintf(translatedp,"H %lf 10 10\n", orgdist);
     fclose(positions);
+    fclose(translatedp);
     return;
 }
 
@@ -292,9 +300,12 @@ int main()
     clock_t begin = clock(); //so we know how long our program takes
     FILE * positions; 
     FILE * energies; 
+    FILE * translatedp;
     positions = fopen("positions.xyz","w");//we open and "w"rite the file to wipe it
     energies = fopen("energies.dat","w");//same as above
+    translatedp = fopen("translatedpositions.xyz", "w");
     fclose(positions);//don't need this for now so we close it
+    fclose(translatedp);
     double cpe, npe;
     double sum, average; //the sum lets us find the average
     bool guess; 
