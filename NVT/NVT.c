@@ -13,17 +13,9 @@ luciano.e.laratelli@outlook.com
 ***************************************************************************/
 /**************
 TO DO:
-SEED RANDOM NUMBER GENERATOR SOMEHOW
-print out accepted distances to debug
-stick one at the origin and move the other's x coordinate only
+Confirm results over many tries for many particles (i.e. 500 000 tries for 1 000 particles)
+Soon, on to mu-VT!
 ************/
-/***************************************************************************
-CURRENT ISSUES:
-***************
-Energies.dat does not have correct numbers for energy. Must be a stupid issue with the
-fprintf statement.
-    UPDATE: it's worse than I thought??
-***************************************************************************/
 
 #include <math.h>
 #include <stdbool.h>
@@ -122,7 +114,6 @@ double PEfinder()
     double sor6,sor12;
     int b,c;
     epsilon = 1.0; //this can be changed to experimental values
-    //epsilon = 128.0
     sigma = 1.0; // same as above
     s2 = sigma * sigma;
     s6 = s2*s2*s2;
@@ -181,7 +172,14 @@ void positionchecker(int id_a)
 
 double uniformrand()
 {
+    static int first_time_through = 1;
+    if(first_time_through)
+    {
+        srandom(time(NULL));
+        first_time_through = 0;
+    }
     double r = random();
+    printf("r = %lf\n",r);
     return r / ((double)RAND_MAX + 1);
 }
 
@@ -197,7 +195,7 @@ void rand_p_mover()
     p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
     delta = (uniformrand() - 0.5)*L; //a random float between -L/2 and L/2 
     gamma = (uniformrand() - 0.5)*L;   //same as above
-    zeta =(uniformrand() - 0.5)*L;  //same as above
+    zeta  = (uniformrand() - 0.5)*L;  //same as above
     move.p = p; //storing values of p, delta, gamma, and zeta in the struct 
     move.delta = delta; //in case the move is rejected
     move.gamma = gamma;
@@ -275,24 +273,16 @@ can visualize the system using software like VMD
 void output_to_file()
 {
     FILE * positions;
-    //FILE * translatedp;
     positions = fopen("positions.xyz","a");
-    //translatedp = fopen("translatedpositions.xyz","a");
-    //double orgdist;
     int p;    
     fprintf(positions, "%d \n\n",N);
-    //fprintf(translatedp, "%d \n\n",N);
     for(p=0;p<N;p++)
     {
         fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
         //hoping this works lmao
         //update: it works!
     }
-    //orgdist = distfinder(0,1) + 14;
-    //fprintf(translatedp,"H 10 10 10\n");
-    //fprintf(translatedp,"H %lf 10 10\n", orgdist);
     fclose(positions);
-    //fclose(translatedp);
     return;
 }
 
@@ -301,12 +291,9 @@ int main()
     clock_t begin = clock(); //so we know how long our program takes
     FILE * positions; 
     FILE * energies; 
-    //FILE * translatedp;
     positions = fopen("positions.xyz","w");//we open and "w"rite the file to wipe it
     energies = fopen("energies.dat","w");//same as above
-    //translatedp = fopen("translatedpositions.xyz", "w");
     fclose(positions);//don't need this for now so we close it
-    //fclose(translatedp);
     double cpe, npe;
     double sum, average; //the sum lets us find the average
     bool guess; 
