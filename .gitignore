@@ -30,3 +30,7 @@ NVT/tester.c
 *.out
 
 *.swp
+
+NVT/.NVT.c.swp
+
+NVT/startingpositions.txt
