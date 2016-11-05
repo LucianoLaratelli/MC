@@ -26,3 +26,7 @@ NVT/startingpositions.txt
 NVT/tester
 
 NVT/tester.c
+
+*.out
+
+*.swp

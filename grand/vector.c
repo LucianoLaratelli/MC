@@ -1,26 +1,29 @@
 #include <vector>
-#include <stdio.h>
-#include <math.h>
-#include <stdlib.h>
+#include <iostream>
 
-std::vector<struct> particles;
-
-struct particle
+typedef struct test_struct_t
 {
-    double x[3]
-};
+    double a;
+    int b;
+    char c;
+} test_struct;
+
+using namespace std;
 
 int main()
 {
-    int i;
-    for(i=0;i<10;i++)
-    {
-        double q,r;
-        q = rand();
-        r = q*i;
-        v.push_back(r);
-        printf("This is the %d element of v: %lf\n",i,v.at(i));
-    }
+    vector<test_struct> test_Vector; //declares a variable of type variable whose name is test_Vector
+    //test_Vector is an OBJECT, it has object methods associated with it like push_back
+
+    test_struct apple;// apple is a struct with three pieces of data associated with it 
+    apple[1].a=3;
+    apple.a = 1.0;// the value a inside the struct apple is = 1 
+    apple.b = 3;
+    apple.c = 'v';
+
+    test_Vector.push_back(apple);
+
     return 0;
 }
+
 
