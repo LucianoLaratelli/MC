@@ -43,6 +43,7 @@ struct remove_values
 
 //we start with a box with sides of Length L
 const int L = 2;
+const int T = 1;
 std::vector <particle> particles;
 struct move_values move;
 struct create_values creator;
@@ -231,25 +232,77 @@ double distfinder(int id_a, int id_b)
     return dist;
 }
 
-double pefinder()
+double pecalc()
 {
-    int b,
+    int b, //counter variables
         c;
-    double sigma,
-           epsilon,
+    double pool = particles.size() - 1;
+    double sigma = 1.00,//variables for the lennard-jones potential
+           epsilon = 1.00,
            r,
-           pe;
-    double s2,
-           s4,
+           pe = 0.00;
+    double s2,//powers of sigma
            s6,
            s12;
-    double rinv,
+    double rinv,//inverse powers of distance between two particles
            r2,
-           r4,
            r6,
            r12;
-    double 
-           
+    double sor6,//powers of sigma over r for the potential equation
+           sor12;
+    s2 = sigma * sigma;
+    s6 = s2 * s2 * s2;
+    s12 = s6 * s6;
+    for(b = 0; b < pool; b++)
+    {
+        for(c = b + 1; c < pool; c++)
+        {
+            r = distfinder(b,c);
+            rinv = 1 / r;
+            r2 = rinv * rinv;
+            r6 = r2 * r2 * r2;
+            r12 = r6 * r6;
+            sor6 = s6 * r6;
+            sor12 = s12 * r12; 
+            pe += (4 * epsilon * (sor12 - sor6));
+        }
+    }
+    return pe;
+}
+
+bool move_acceptor(double cpe, double npe, int c)
+{
+    double delta,
+           guess,
+           probability,
+           beta,
+           k;
+    FILE * energies;
+    energies = fopen("energies.dat","a");
+    delta = npe - cpe;
+    if(delta < 0)
+    {
+        fprintf(energies,"%d %f \n", c, npe);
+        fclose(energies);
+        return true;
+    }
+    guess = ((double)rand()/(double)RAND_MAX);
+    k = 1;
+    beta = 1 /(k * T);
+    probability  = exp(-1 * beta * delta);
+    if(probability > guess)
+    {
+        fprintf(energies, "%d %f\n", c, npe);
+        fclose(energies);
+        return true;
+    }
+    else
+    {
+        fprintf(energies,"%d %f \n", c ,cpe);
+        fclose(energies);
+        return false;
+    }
+}
 /*
 double average(double sum, int frames)
 {
@@ -285,12 +338,13 @@ int main()
     cpe = pecalc();//we find the starting potential
     fprintf(energies,"0 %f\n", cpe);
     fclose(energies);
+    m = particles.size();
     sum = cpe;//the sum has to include the initial starting energy
     for(c=1;c<m;c++)
     {
         flag = move_chooser();//first step of the monte carlo
         npe = pecalc();
-        guess = ecalc(cpe,npe,c);
+        guess = move_acceptor(cpe,npe,c);
         if(guess == true)
         {
             output();
@@ -307,5 +361,6 @@ int main()
     }
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
+    printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
     return 0;
 }
