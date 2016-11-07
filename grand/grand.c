@@ -54,7 +54,8 @@ struct remove_values destroy;
 //opposite side of the box by a more obedient particle
 bool positionchecker(int particleID)
 {
-    int i,a;//counter variables whose name means nothing
+    bool a;
+    int i;
     for(i=0;i<3;i++)
     {
         if(particles[particleID].x[i] >= L)
@@ -128,10 +129,6 @@ void particlemover(int pick)
         {
             particleunmover();
         }
-        if(i==true)
-        {
-            continue;
-        }
     }
     return;
 }
@@ -159,6 +156,10 @@ void thedestroyer(int pick)
     destroy.phi = particles[pick].x[0];
     destroy.gamma = particles[pick].x[1];
     destroy.delta = particles[pick].x[2];
+    particles.erase(particles.begin() + pick);//begin refers to the pointer of the
+                                              //zeroth item; 
+                                              // we add "pick" amount of bytes 
+                                              // to get to the next pointer
     return;
 }
 
@@ -166,22 +167,12 @@ void thedestroyer(int pick)
 //three other functions, which impose the monte carlo method onto the system.
 int move_chooser()
 {
-    int flag;
+    int flag,
+        pool;
     double choice,
-           pick,
-           pool;
-    pool = particles.size()-1;//amount of particles currently available
-    printf("Pool = %f", pool);
-    pick = rand()%(int)pool;//picks random particle from those available
-    choice = randomish()* 3; //choice is a random float between 0 and 3
-    printf("Random choice = %f",choice);
-    fflush(stdout);
-    if(choice<1.0)
-    {
-        particlemover(pick);
-        flag = 0;
-    }
-    if(choice>2.0)
+           pick;
+    pool = particles.size();//amount of particles currently available
+    if(pool == 0)
     {
         thecreator();
         pool = particles.size();
@@ -189,8 +180,25 @@ int move_chooser()
     }
     else
     {
-        thedestroyer(pick);
-        flag = 2;
+        pick = rand()%pool;//picks random particle from those available
+        choice = randomish()* 3; //choice is a random float between 0 and 3
+        fflush(stdout);
+        if(choice<1.0)
+        {
+            particlemover(pick);
+            flag = 0;
+        }
+        else if(choice>2.0)
+        {
+            thecreator();
+            pool = particles.size();
+            flag = 1;
+        }
+        else
+        {
+            thedestroyer(pick);
+            flag = 2;
+        }
     }
     return flag;
 }
@@ -324,7 +332,6 @@ void output()
 int main()
 {
     bool guess;
-    clock_t begin = clock();
     double cpe,
            npe,
            sum,
@@ -345,6 +352,7 @@ int main()
     fprintf(energies,"0 %f\n", cpe);
     fclose(energies);
     printf("How many tries do you want?\n");
+    clock_t begin = clock();
     fflush(stdout);//forces printf out of buffer
     scanf("%i",&max);
     m = particles.size();
