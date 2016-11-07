@@ -170,9 +170,12 @@ int move_chooser()
     double choice,
            pick,
            pool;
-    pool = particles.size();//amount of particles currently available
-    pick = randomish()*pool;//picks random particle from those available
+    pool = particles.size()-1;//amount of particles currently available
+    printf("Pool = %f", pool);
+    pick = rand()%(int)pool;//picks random particle from those available
     choice = randomish()* 3; //choice is a random float between 0 and 3
+    printf("Random choice = %f",choice);
+    fflush(stdout);
     if(choice<1.0)
     {
         particlemover(pick);
@@ -217,7 +220,8 @@ double distfinder(int id_a, int id_b)
 {
     double dist,
            delta,
-           delta2 = 0.00;
+           delta2 = 0.00,
+           pool = particles.size();
     int i;
     for(i=0;i<3;i++)
     {
@@ -236,7 +240,7 @@ double pecalc()
 {
     int b, //counter variables
         c;
-    double pool = particles.size() - 1;
+    double pool = particles.size();
     double sigma = 1.00,//variables for the lennard-jones potential
            epsilon = 1.00,
            r,
@@ -253,7 +257,7 @@ double pecalc()
     s2 = sigma * sigma;
     s6 = s2 * s2 * s2;
     s12 = s6 * s6;
-    for(b = 0; b < pool; b++)
+    for(b = 0; b < pool-1; b++)
     {
         for(c = b + 1; c < pool; c++)
         {
@@ -327,6 +331,7 @@ int main()
            average;
     int c,
         m,
+        max,
         flag;
     FILE * positions;
     FILE * energies;
@@ -335,28 +340,36 @@ int main()
     energies = fopen("energies.dat","w");
     qsts = fopen("qsts.dat","w");
     fclose(positions);
-    cpe = pecalc();//we find the starting potential
+    fclose(qsts);
+    cpe = pecalc();//we find the starting potential and call it our "current" one
     fprintf(energies,"0 %f\n", cpe);
     fclose(energies);
+    printf("How many tries do you want?\n");
+    fflush(stdout);//forces printf out of buffer
+    scanf("%i",&max);
     m = particles.size();
     sum = cpe;//the sum has to include the initial starting energy
-    for(c=1;c<m;c++)
+    for(c=1;c<max;c++)
     {
-        flag = move_chooser();//first step of the monte carlo
-        npe = pecalc();
-        guess = move_acceptor(cpe,npe,c);
-        if(guess == true)
+        while(m>=0)//we can't have negative particles
         {
-            output();
-            cpe = npe;
-            sum += cpe;
-        }
-        else
-        {
-            move_undoer(flag);
-            output();
-            sum += cpe;
-            continue;
+            flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
+            npe = pecalc();//"new potential energy"
+            guess = move_acceptor(cpe,npe,c);//move acceptor rejects or accepts the move
+            if(guess == true)
+            {
+                output();
+                cpe = npe;//updates the current energy
+                sum += cpe;//adds to the average
+                break;//breaks out of the while loop, increments c
+            }
+            else
+            {
+                move_undoer(flag);//uses the flag to undo a move if necessary
+                output();
+                sum += cpe;//adds the old energy to the average
+                break;//breaks out of the while loop, increments c
+            }
         }
     }
     clock_t end = clock();
