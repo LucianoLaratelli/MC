@@ -294,7 +294,8 @@ bool move_acceptor(double cpe, double npe, int c)
     delta = npe - cpe;
     if(delta < 0)
     {
-        fprintf(energies,"%d %f \n", c, npe);
+        printf("npe ifforce=%f\n",npe);
+        fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
         return true;
     }
@@ -302,15 +303,18 @@ bool move_acceptor(double cpe, double npe, int c)
     k = 1;
     beta = 1 /(k * T);
     probability  = exp(-1 * beta * delta);
+    printf("npe=%f\n",npe);
     if(probability > guess)
     {
-        fprintf(energies, "%d %f\n", c, npe);
+        printf("npe if=%f\n",npe);
+        fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
         return true;
     }
     else
     {
-        fprintf(energies,"%d %f \n", c ,cpe);
+    printf("cpe else=%f\n",cpe);
+        fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
         return false;
     }

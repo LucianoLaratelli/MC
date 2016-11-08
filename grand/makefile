@@ -7,4 +7,7 @@ $(TARGET): $(TARGET).c
 	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
 
 clean:
-	$(RM) $(TARGET)
+	$(RM) $(TARGET) 
+	$(RM) energies.dat
+	$(RM) positions.xyz
+	$(RM) qsts.dat
