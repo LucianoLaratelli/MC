@@ -42,24 +42,24 @@ struct remove_values
 };
 
 //we start with a box with sides of Length L
-const int L = 2;
-const int T = 1;
+const int L = 22;
+const int T = 292;
+const int mu = -40;
 std::vector <particle> particles;
 struct move_values move;
 struct create_values creator;
 struct remove_values destroy;
-
-//positionchecker imposes periodic boundary conditions on a particle N by its id. 
-//if any particle tries to escape the box, it disappears and is replaced on the
-//opposite side of the box by a more obedient particle
-bool positionchecker(int particleID)
-{
-    bool a;
-    int i;
-    for(i=0;i<3;i++)
-    {
-        if(particles[particleID].x[i] >= L)
-        {
+//positionchecker imposes periodic boundary conditions on a particle N by its id.  
+////if any particle tries to escape the box, it disappears and is replaced on the 
+////opposite side of the box by a more obedient particle
+bool positionchecker(int particleID) 
+{ 
+    bool a; 
+    int i; 
+    for(i=0;i<3;i++) 
+    { 
+        if(particles[particleID].x[i] >= L) 
+        { 
             particles[particleID].x[i] -= L;
             a = false;
         }
@@ -176,10 +176,10 @@ int move_chooser()
     {
         thecreator();
         pool = particles.size();
-        flag = 1;
+        flag = 0;
     }
     else
-    {
+   {
         pick = rand()%pool;//picks random particle from those available
         choice = randomish()* 3; //choice is a random float between 0 and 3
         fflush(stdout);
@@ -282,54 +282,104 @@ double pecalc()
     return pe;
 }
 
-bool move_acceptor(double cpe, double npe, int c)
+bool move_acceptor(double cpe, double npe, int c, int flag)
 {
     double delta,
            guess,
            probability,
-           beta,
-           k;
+           k = 1,
+           beta = 1/(k * T);
     FILE * energies;
     energies = fopen("energies.dat","a");
     delta = npe - cpe;
+    double relativemu,
+          h,
+          m,
+          lambda,
+          lambdacubed;
+    h = 6.626 * pow(10,-23);
+    double pi = M_PI;
+    m = 83.798;
+    lambda = (h)/(sqrt(2*pi*m*k*T)) ;
+    lambdacubed = lambda * lambda * lambda;
+    relativemu = mu -( k * T * log(lambdacubed) );
     if(delta < 0)
     {
-        printf("npe ifforce=%f\n",npe);
         fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
         return true;
     }
-    guess = ((double)rand()/(double)RAND_MAX);
-    k = 1;
-    beta = 1 /(k * T);
-    probability  = exp(-1 * beta * delta);
-    printf("npe=%f\n",npe);
-    if(probability > guess)
+    if(flag == 0)//if we MOVED a particle 
     {
-        printf("npe if=%f\n",npe);
-        fprintf(energies,"%d %f \n", c,npe);
-        fclose(energies);
-        return true;
+        guess = ((double)rand()/(double)RAND_MAX);
+        // need new probabilities based on actual factors
+        // so, one for insertion, one for deletion, and one for the move, based on flag
+        probability  = exp(-1 * beta * delta);
+        if(probability > guess)
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return true;
+        }
+        else
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return false;
+        }
     }
-    else
+    int volume = L * 3;
+    int pool = particles.size();
+    int poolplus = pool++;
+    if(flag == 1)//if we CREATED a particle
     {
-    printf("cpe else=%f\n",cpe);
-        fprintf(energies,"%d %f \n", c,npe);
-        fclose(energies);
-        return false;
+        double acceptance = -(beta*delta) + (beta*relativemu) +(log(volume/poolplus));
+        double condition = exp(acceptance);
+        if(condition < 1)
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return true;
+        }
+        else
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return false;
+        }
+    }
+    if(flag == 2)//if we DESTROYED a particle
+    {
+        double oneterm = -(beta*delta)-(beta*relativemu);
+        double acceptance = exp(oneterm);
+        double condition = pool/volume * acceptance;
+        if(condition < 1)
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return true;
+        }
+        else
+        {
+            fprintf(energies,"%d %f \n", c,npe);
+            fclose(energies);
+            return false;
+        }
     }
 }
+
 /*
 double average(double sum, int frames)
 {
     return average;
 }
 */
+
 void output()
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
-        
+    fclose(positions); 
     return;
 }
 
@@ -367,7 +417,7 @@ int main()
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
             npe = pecalc();//"new potential energy"
-            guess = move_acceptor(cpe,npe,c);//move acceptor rejects or accepts the move
+            guess = move_acceptor(cpe,npe,c,flag);//move acceptor rejects or accepts the move
             if(guess == true)
             {
                 output();
