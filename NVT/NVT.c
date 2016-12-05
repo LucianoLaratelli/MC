@@ -247,7 +247,6 @@ bool E_checker(double cpe, double npe,int c)
         fclose(energies);
         return false;
     }
-
 }
 
 /****************
@@ -291,8 +290,8 @@ int main()
     clock_t begin = clock(); //so we know how long our program takes
     FILE * positions; 
     FILE * energies; 
-    positions = fopen("positions.xyz","w");//we open and "w"rite the file to wipe it
-    energies = fopen("energies.dat","w");//same as above
+    positions = fopen("positions.xyz","w");
+    energies = fopen("energies.dat","w");
     fclose(positions);//don't need this for now so we close it
     double cpe, npe;
     double sum, average; //the sum lets us find the average

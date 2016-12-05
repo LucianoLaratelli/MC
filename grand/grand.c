@@ -1,5 +1,6 @@
 /*****
-This is a monte carlo method simulator of the grand canonical ensemble, also known as the "mu-V-T" ensemble. This program takes a system composed of any number of particles and does one of three moves on it:
+This is a monte carlo method simulator of the grand canonical ensemble, also known as the "mu-V-T" ensemble.
+This program takes a system composed of any number of particles and does one of three moves on it:
 
 1. moves a random particle a random distance
 2. adds a particle at a random positions
@@ -43,8 +44,7 @@ struct remove_values
 
 //we start with a box with sides of Length L
 const int L = 22;
-const int T = 292;
-const int mu = -40;
+const int T = 101;
 std::vector <particle> particles;
 struct move_values move;
 struct create_values creator;
@@ -228,8 +228,7 @@ double distfinder(int id_a, int id_b)
 {
     double dist,
            delta,
-           delta2 = 0.00,
-           pool = particles.size();
+           delta2 = 0.00;
     int i;
     for(i=0;i<3;i++)
     {
@@ -249,8 +248,8 @@ double pecalc()
     int b, //counter variables
         c;
     double pool = particles.size();
-    double sigma = 1.00,//variables for the lennard-jones potential
-           epsilon = 1.00,
+    double sigma = 3.405,//variables for the lennard-jones potential
+           epsilon = 120.00,
            r,
            pe = 0.00;
     double s2,//powers of sigma
@@ -282,12 +281,13 @@ double pecalc()
     return pe;
 }
 
-bool move_acceptor(double cpe, double npe, int c, int flag)
+bool move_acceptor(double cpe, double npe, int c, int flag, int n)
 {
     double delta,
            guess,
            probability,
-           k = 1,
+           mu,
+           k = 1.380648 * pow(10,-23),
            beta = 1/(k * T);
     FILE * energies;
     energies = fopen("energies.dat","a");
@@ -297,19 +297,24 @@ bool move_acceptor(double cpe, double npe, int c, int flag)
           m,
           lambda,
           lambdacubed;
+    // NEED TO CALCULATE MU PER MOVE (IT SHOULD BE MINIMIZED AFTER N MOVES)
     h = 6.626 * pow(10,-23);
+    mu = 0;
     double pi = M_PI;
-    m = 83.798;
+    m = 39.948;
     lambda = (h)/(sqrt(2*pi*m*k*T)) ;
     lambdacubed = lambda * lambda * lambda;
     relativemu = mu -( k * T * log(lambdacubed) );
+    int volume = L * 3;
+    int pool = particles.size();
+    int poolplus = pool++;
     if(delta < 0)
     {
         fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
         return true;
     }
-    if(flag == 0)//if we MOVED a particle 
+    else if(flag == 0)//if we MOVED a particle 
     {
         guess = ((double)rand()/(double)RAND_MAX);
         // need new probabilities based on actual factors
@@ -328,10 +333,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag)
             return false;
         }
     }
-    int volume = L * 3;
-    int pool = particles.size();
-    int poolplus = pool++;
-    if(flag == 1)//if we CREATED a particle
+    else if(flag == 1)//if we CREATED a particle
     {
         double acceptance = -(beta*delta) + (beta*relativemu) +(log(volume/poolplus));
         double condition = exp(acceptance);
@@ -348,7 +350,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag)
             return false;
         }
     }
-    if(flag == 2)//if we DESTROYED a particle
+    else if(flag == 2)//if we DESTROYED a particle
     {
         double oneterm = -(beta*delta)-(beta*relativemu);
         double acceptance = exp(oneterm);
@@ -368,17 +370,38 @@ bool move_acceptor(double cpe, double npe, int c, int flag)
     }
 }
 
-/*
-double average(double sum, int frames)
+double qst_calc(int N, double energy, int c)//sorry
 {
-    return average;
+    FILE * qsts;
+    qsts = fopen("qsts.dat","a");
+    double average_N = N/c;//<N>
+    double average_N_all_squared = average_N * average_N;//<N>^2
+    double average_energy = energy / c;//<U>
+    double N_squared = N * N;
+    double average_of_N_squared = N_squared * N_squared;//<N^2>
+    double particles_by_energy = N * energy;
+    double average_of_particles_by_energy = particles_by_energy / c; //<NU>
+    double numerator = (average_of_particles_by_energy) - (average_N * average_energy);
+    double denominator = average_of_N_squared - average_N_all_squared;
+    double QST = numerator / denominator;
+    printf("%d %lf\n",c,QST);
+    fprintf(qsts, "%d %lf\n", c, QST);
+    fclose(qsts);
+    return QST;
 }
-*/
 
 void output()
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
+    int p,
+        pool;
+    pool = particles.size();
+    fprintf(positions, "%d \n\n",pool);
+    for(p=0;p<pool;p++)
+    {
+        fprintf(positions, "H %lf %lf %lf\n", particles[p].x[0],particles[p].x[1], particles[p].x[2]);
+    }
     fclose(positions); 
     return;
 }
@@ -388,8 +411,10 @@ int main()
     bool guess;
     double cpe,
            npe,
-           sum,
-           average;
+           sumenergy,
+           sumparticles,
+           averageenergy,
+           averageparticles;
     int c,
         m,
         max,
@@ -410,26 +435,33 @@ int main()
     fflush(stdout);//forces printf out of buffer
     scanf("%i",&max);
     m = particles.size();
-    sum = cpe;//the sum has to include the initial starting energy
+    sumenergy = cpe;//the sum has to include the initial starting energy
+    sumparticles = m;
     for(c=1;c<max;c++)
     {
         while(m>=0)//we can't have negative particles
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
             npe = pecalc();//"new potential energy"
-            guess = move_acceptor(cpe,npe,c,flag);//move acceptor rejects or accepts the move
+            guess = move_acceptor(cpe,npe,c,flag,m);//move acceptor rejects or accepts the move
             if(guess == true)
             {
+                m = particles.size();
                 output();
                 cpe = npe;//updates the current energy
-                sum += cpe;//adds to the average
+                sumenergy += cpe;//adds to the average
+                sumparticles += m;
+                qst_calc(sumparticles,sumenergy,c);
                 break;//breaks out of the while loop, increments c
             }
             else
             {
+                m = particles.size();
                 move_undoer(flag);//uses the flag to undo a move if necessary
                 output();
-                sum += cpe;//adds the old energy to the average
+                sumenergy += cpe;//adds the old energy to the average
+                sumparticles += m;
+                qst_calc(sumparticles,sumenergy,c);
                 break;//breaks out of the while loop, increments c
             }
         }
