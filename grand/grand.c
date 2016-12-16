@@ -42,39 +42,40 @@ struct remove_values
     double phi, gamma, delta;
 };
 
-//we start with a box with sides of Length L
-const int L = 22;
-const int T = 101;
+const int L = 22; //length of one side of the box
+const int T = 101; // kelvin
+const double k = 1.0; //boltzmann factor
+const double h = 6.626 * pow(10,-34);//planck constant
+
 std::vector <particle> particles;
 struct move_values move;
 struct create_values creator;
 struct remove_values destroy;
-//positionchecker imposes periodic boundary conditions on a particle N by its id.  
-////if any particle tries to escape the box, it disappears and is replaced on the 
-////opposite side of the box by a more obedient particle
+
+// positionchecker imposes periodic boundary conditions on a particle N by its id.  
+// if any particle tries to escape the box, it disappears and is replaced on the 
+// opposite side of the box by a more obedient particle
 bool positionchecker(int particleID) 
 { 
-    bool a; 
-    int i; 
-    for(i=0;i<3;i++) 
+    for(int i=0;i<3;i++) 
     { 
         if(particles[particleID].x[i] >= L) 
         { 
             particles[particleID].x[i] -= L;
-            a = false;
+            return false;
         }
         if(particles[particleID].x[i] < 0)
         {
             particles[particleID].x[i] += L;
-            a = false;
+            return false;
         }
         else
         {
-            a = true;
+            return true;
         }
     }
-    return a;
 }
+
 //randomish returns a random float between 0 and 1
 double randomish()
 {
@@ -87,19 +88,21 @@ double randomish()
     double r = random();
     return r/((double)RAND_MAX + 1);
 }
+
+
 void particleunmover()
 {
-    int pick;
-    double phi, gamma, delta;
-    pick = move.pick;
-    phi = move.phi;
-    gamma = move.gamma;
-    delta = move.gamma;
+    int pick = move.pick;
+    double phi = move.phi, 
+           gamma = move.gamma,
+           delta = move.delta;
     particles[pick].x[0] -=phi;
     particles[pick].x[1] -= gamma;
     particles[pick].x[2] -= delta;
     return;
 }
+
+
 //particlemover moves a random particle a random distance
 void particlemover(int pick)
 {
@@ -109,9 +112,9 @@ void particlemover(int pick)
     int i = false;
     while(i == false)
     {
-        double phi   = (randomish()-0.5)*L;
-        double gamma = (randomish()-0.5)*L;
-        double delta = (randomish()-0.5)*L;
+        double phi   = (randomish()-0.5)*L,
+               gamma = (randomish()-0.5)*L,
+               delta = (randomish()-0.5)*L;
         //these next few lines store our moves in a struct in case they suck and we
         //need to undo the move
         move.pick = pick;
@@ -132,6 +135,8 @@ void particlemover(int pick)
     }
     return;
 }
+
+
 //the creator adds particles to the system if it is chosen to do so by move_chooser
 //below. The coordinates of the new particle are random based on the length 
 //of the box
@@ -163,25 +168,23 @@ void thedestroyer(int pick)
     return;
 }
 
+
 //move chooser picks a random float between 0 and three and uses it to call one of
 //three other functions, which impose the monte carlo method onto the system.
 int move_chooser()
 {
     int flag,
-        pool;
-    double choice,
-           pick;
-    pool = particles.size();//amount of particles currently available
-    if(pool == 0)
+        pool = particles.size();
+    if(pool == 0)//if there are 0 particles we must add some to get started
     {
         thecreator();
         pool = particles.size();
         flag = 0;
     }
     else
-   {
-        pick = rand()%pool;//picks random particle from those available
-        choice = randomish()* 3; //choice is a random float between 0 and 3
+    {
+        double pick = random()%pool,//picks random particle from those available
+               choice = randomish()* 3; //choice is a random float between 0 and 3
         fflush(stdout);
         if(choice<1.0)
         {
@@ -228,28 +231,28 @@ double distfinder(int id_a, int id_b)
 {
     double dist,
            delta,
-           delta2 = 0.00;
-    int i;
-    for(i=0;i<3;i++)
+           delta2 = 0.00,
+           cutoff = 0.5 * L;
+    for(int i=0;i<3;i++)
     {
-        delta = particles[id_a].x[i] - particles[id_b].x[i];
+        delta = fabs(particles[id_a].x[i] - particles[id_b].x[i]);
+        if(delta > cutoff)
+        {
+            delta -= cutoff;
+        }
         delta2 += delta * delta;
     }
     dist = sqrt(delta2);
-    if(dist>0.5*L)
-    {
-        dist -= L;
-    }
     return dist;
 }
 
-double pecalc()
+double pecalc()//returns energy in Kelvin
 {
     int b, //counter variables
-        c;
-    double pool = particles.size();
-    double sigma = 3.405,//variables for the lennard-jones potential
-           epsilon = 120.00,
+        c,
+        pool = particles.size();
+    double sigma = 3.371914,// LJ, in angstroms 
+           epsilon = 128.326802,//LJ, in kelvin 
            r,
            pe = 0.00;
     double s2,//powers of sigma
@@ -261,6 +264,7 @@ double pecalc()
            r12;
     double sor6,//powers of sigma over r for the potential equation
            sor12;
+    double cutoff = L * 0.5;
     s2 = sigma * sigma;
     s6 = s2 * s2 * s2;
     s12 = s6 * s6;
@@ -269,6 +273,10 @@ double pecalc()
         for(c = b + 1; c < pool; c++)
         {
             r = distfinder(b,c);
+            if(r<cutoff)
+            {
+                continue;
+            }
             rinv = 1 / r;
             r2 = rinv * rinv;
             r6 = r2 * r2 * r2;
@@ -287,27 +295,25 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
            guess,
            probability,
            mu,
-           k = 1.380648 * pow(10,-23),
-           beta = 1/(k * T);
+           beta = 1 / (k * T);
     FILE * energies;
     energies = fopen("energies.dat","a");
     delta = npe - cpe;
     double relativemu,
-          h,
           m,
           lambda,
           lambdacubed;
     // NEED TO CALCULATE MU PER MOVE (IT SHOULD BE MINIMIZED AFTER N MOVES)
-    h = 6.626 * pow(10,-23);
-    mu = 0;
+    int pool = particles.size();
+    int poolplus = pool + 1;
+    double volume = L * L * L;
+    double density = pool / volume;
     double pi = M_PI;
-    m = 39.948;
+    m = 39.948;//AMU
     lambda = (h)/(sqrt(2*pi*m*k*T)) ;
     lambdacubed = lambda * lambda * lambda;
-    relativemu = mu -( k * T * log(lambdacubed) );
-    int volume = L * 3;
-    int pool = particles.size();
-    int poolplus = pool++;
+    mu = k * T * log(lambdacubed) * density;
+    relativemu = mu -( k * T * log(lambdacubed));
     if(delta < 0)
     {
         fprintf(energies,"%d %f \n", c,npe);
@@ -316,7 +322,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
     }
     else if(flag == 0)//if we MOVED a particle 
     {
-        guess = ((double)rand()/(double)RAND_MAX);
+        guess = ((double)random()/(double)RAND_MAX);
         // need new probabilities based on actual factors
         // so, one for insertion, one for deletion, and one for the move, based on flag
         probability  = exp(-1 * beta * delta);
@@ -354,7 +360,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
     {
         double oneterm = -(beta*delta)-(beta*relativemu);
         double acceptance = exp(oneterm);
-        double condition = pool/volume * acceptance;
+        double condition = pool/ (volume * acceptance);
         if(condition < 1)
         {
             fprintf(energies,"%d %f \n", c,npe);
@@ -377,14 +383,13 @@ double qst_calc(int N, double energy, int c)//sorry
     double average_N = N/c;//<N>
     double average_N_all_squared = average_N * average_N;//<N>^2
     double average_energy = energy / c;//<U>
-    double N_squared = N * N;
+    double N_squared = average_N * average_N;
     double average_of_N_squared = N_squared * N_squared;//<N^2>
-    double particles_by_energy = N * energy;
+    double particles_by_energy = average_N * average_energy;
     double average_of_particles_by_energy = particles_by_energy / c; //<NU>
     double numerator = (average_of_particles_by_energy) - (average_N * average_energy);
     double denominator = average_of_N_squared - average_N_all_squared;
-    double QST = numerator / denominator;
-    printf("%d %lf\n",c,QST);
+    double QST = k * T - ( numerator / denominator);
     fprintf(qsts, "%d %lf\n", c, QST);
     fclose(qsts);
     return QST;
@@ -400,7 +405,7 @@ void output()
     fprintf(positions, "%d \n\n",pool);
     for(p=0;p<pool;p++)
     {
-        fprintf(positions, "H %lf %lf %lf\n", particles[p].x[0],particles[p].x[1], particles[p].x[2]);
+        fprintf(positions, "Ar %lf %lf %lf\n", particles[p].x[0],particles[p].x[1], particles[p].x[2]);
     }
     fclose(positions); 
     return;
@@ -412,9 +417,7 @@ int main()
     double cpe,
            npe,
            sumenergy,
-           sumparticles,
-           averageenergy,
-           averageparticles;
+           sumparticles;
     int c,
         m,
         max,
@@ -442,15 +445,15 @@ int main()
         while(m>=0)//we can't have negative particles
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
-            npe = pecalc();//"new potential energy"
+            npe = pecalc();//"new potential energy" in K
             guess = move_acceptor(cpe,npe,c,flag,m);//move acceptor rejects or accepts the move
             if(guess == true)
             {
                 m = particles.size();
                 output();
                 cpe = npe;//updates the current energy
-                sumenergy += cpe;//adds to the average
-                sumparticles += m;
+                sumenergy += cpe;//adds to the running total
+                sumparticles += m;//see above
                 qst_calc(sumparticles,sumenergy,c);
                 break;//breaks out of the while loop, increments c
             }
