@@ -11,11 +11,6 @@ startgenerator only works well with particle numbers with integer cube roots (or
 -Luciano Laratelli
 luciano.e.laratelli@outlook.com
 ***************************************************************************/
-/**************
-TO DO:
-Confirm results over many tries for many particles (i.e. 500 000 tries for 1 000 particles)
-Soon, on to mu-VT!
-************/
 
 #include <math.h>
 #include <stdbool.h>
@@ -43,8 +38,9 @@ If you know why this is the case, please let me know!
 
 //this is the NVT part
 const int N = 1000; //number of particles
-const double T = 1; //kelvin; 
+const double T = 77; //kelvin; 
 const int L = 200; //length of one side of the cube, L = sigma
+const double k = 1.0;//boltzmann factor
 
 
 /*
@@ -84,20 +80,21 @@ double distfinder(int id_a, int id_b)
 {
     int i;
     double dist, delta2,delta;
+    double cutoff = 0.5 * L;
     delta2 = 0; //clearing junk from memory just in case
     for(i=0;i<3;i++)
     {
-        delta = particles[id_a].x[i] - particles[id_b].x[i];
+        delta = fabs(particles[id_a].x[i] - particles[id_b].x[i]);
+        if(delta > cutoff)
+        {
+            delta -= cutoff;
+        }
         delta2 += delta * delta;
         //finds distance coordinate by coordinate,
         //keeping the sum of the squares in memory
     }
     dist = sqrt(delta2); 
     //distance formula says dist = sqrt of the sum of the squares
-    if(dist > 0.5 * L) //this is for the periodic boundary conditions
-    {
-        dist -= L;//minimum image convention
-    }
     return dist;
 }
 
@@ -108,22 +105,26 @@ lennard-jones is one person, if you were wondering
 **********************/
 double PEfinder()
 {
-    double sigma, epsilon, r,pe;
-    double s2,s4,s6,s12;//exponents of sigma
-    double rinv,r2,r4,r6,r12;//exponents of r
-    double sor6,sor12;
-    int b,c;
-    epsilon = 1.0; //this can be changed to experimental values
-    sigma = 1.0; // same as above
+    double s2,s6,s12;//exponents of sigma
+    double rinv,r2,r6,r12;//exponents of r
+    double sor6,sor12;//sigma over r => s/r
+    double epsilon = 128.326802,
+           sigma = 3.371914,
+           pe = 0,
+           r; 
     s2 = sigma * sigma;
     s6 = s2*s2*s2;
     s12 = s6*s6;
-    pe = 0; //in case there's any ghosts in the memory
-    for(b=0;b<N;b++)
+    double cutoff = L * 0.5;
+    for(int b=0;b<N;b++)
     {
-        for(c=b+1;c<N;c++)
+        for(int c=b+1;c<N;c++)
         {
             r = distfinder(b,c);
+            if(r<cutoff)
+            {
+                continue;
+            }
             rinv = 1/r;
             //formula has sigma/r; this is easier to work with
             r2 = rinv * rinv;
@@ -165,11 +166,11 @@ void positionchecker(int id_a)
     return;
 }
 
+
 /**************************
  uniformrand returns a random number between 1 and 0; its output can be modified to fit
  any range, as seen in rand_p_mover just below it.
 ***************************/
-
 double uniformrand()
 {
     static int first_time_through = 1;
@@ -179,9 +180,9 @@ double uniformrand()
         first_time_through = 0;
     }
     double r = random();
-    printf("r = %lf\n",r);
     return r / ((double)RAND_MAX + 1);
 }
+
 
 /*********************
 this next function is the first step of the monte carlo method; 
@@ -190,12 +191,10 @@ and then calls positionchecker to enforce boundary conditions
 *********************/
 void rand_p_mover()
 {
-    int p;
-    double delta,gamma,zeta; //random greek letter variables with no specific meaning
-    p = rand() / (RAND_MAX / N + 1); //p is a random int between 0 and N
-    delta = (uniformrand() - 0.5)*L; //a random float between -L/2 and L/2 
-    gamma = (uniformrand() - 0.5)*L;   //same as above
-    zeta  = (uniformrand() - 0.5)*L;  //same as above
+    int p = random() / (RAND_MAX / N + 1); //p is a random int between 0 and N
+    double delta = (uniformrand() - 0.5)*L, //a random float between -L/2 and L/2 
+           gamma = (uniformrand() - 0.5)*L,   //same as above
+           zeta  = (uniformrand() - 0.5)*L;  //same as above
     move.p = p; //storing values of p, delta, gamma, and zeta in the struct 
     move.delta = delta; //in case the move is rejected
     move.gamma = gamma;
@@ -209,6 +208,7 @@ void rand_p_mover()
     return;
 }
 
+
 /********************
 this is the second part of the monte carlo method; it takes the PE from PE finder
 for the current configuration and subtracts it from the previous configuration. 
@@ -221,8 +221,10 @@ bool E_checker(double cpe, double npe,int c)
 {
     FILE * energies;
     energies = fopen("energies.dat","a");
-    double deltaE,guess,k,beta,prob; //no ints in this function, no sir!
-    deltaE = npe-cpe; // between the "new" PE and the "current" one
+    double deltaE = npe - cpe,
+           guess,
+           beta = 1 / (k * T),
+           prob; //no ints in this function, no sir!
     //DELTA between two things is FINAL MINUS INITIAL
     //NOT THE OTHER WAY AROUND
     if(deltaE < 0)//if the new energy is lower than the old energy, we always accept it
@@ -231,9 +233,7 @@ bool E_checker(double cpe, double npe,int c)
         fclose(energies);
         return true;
     }
-    guess=((double)rand()/(double)RAND_MAX);
-    k = 1; //Boltzmann constant in the natural units for the system
-    beta = 1/(k*T); //temperature as set above
+    guess=((double)random()/(double)RAND_MAX);
     prob = exp(-1*beta*deltaE);
     if(prob > guess)
     {
@@ -249,20 +249,21 @@ bool E_checker(double cpe, double npe,int c)
     }
 }
 
+
 /****************
 rand_p_unmover does something very important: if a move is rejected by E_checker, 
 rand_p_unmover reverts the system to its previous state, using the struct move_values
 ****************/
 void rand_p_unmover()
 {
-    int p;
-    p = move.p; //gotta remember which particle we want to move back!
+    int p = move.p;//remembering the particle we want to unmove
     particles[p].x[0] -= move.delta;
     particles[p].x[1] -= move.gamma;
     particles[p].x[2] -= move.zeta;
     positionchecker(p);
     return;
 }
+
 
 /******************
 output_to_file lives up to its name;
@@ -273,11 +274,10 @@ void output_to_file()
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
-    int p;    
     fprintf(positions, "%d \n\n",N);
-    for(p=0;p<N;p++)
+    for(int p=0;p<N;p++)
     {
-        fprintf(positions,"H %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
+        fprintf(positions,"Ar %lf %lf %lf\n", particles[p].x[0], particles[p].x[1], particles[p].x[2]);
         //hoping this works lmao
         //update: it works!
     }
@@ -285,27 +285,42 @@ void output_to_file()
     return;
 }
 
+
+double helmholtz(double new_energy, double past_energy, int c)
+{
+    FILE * free_energies = fopen("free_energies.dat","a");
+    double delta = new_energy - past_energy,
+           beta = 1 / ( k * T),
+           expo = exp(-1 * delta * beta),
+           helmholtz = k*T*log(expo/c);     
+    fprintf(free_energies,"%d %lf\n",c,helmholtz);
+    fclose(free_energies);
+    return expo;
+}
+
+
 int main()
 {
     clock_t begin = clock(); //so we know how long our program takes
-    FILE * positions; 
-    FILE * energies; 
-    positions = fopen("positions.xyz","w");
-    energies = fopen("energies.dat","w");
+    FILE * positions = fopen("positions.xyz","w");
+    FILE * energies = fopen("energies.dat","w");
+    FILE * free_energies = fopen("free_energies.dat","w");
     fclose(positions);//don't need this for now so we close it
-    double cpe, npe;
-    double sum, average; //the sum lets us find the average
+    fclose(free_energies);
     bool guess; 
     int c; //count
     int m; //maximum number of tries
     printf("How many tries do you want to do?\n"); //user-directed!
     scanf("%d", &m);
     starting_positions(); //read in starting positions
-    output_to_file(); //write them to a file
-    cpe = PEfinder(); //"current potential energy"
-    fprintf(energies,"0 %f\n", cpe); //
+    double cpe = PEfinder(),//current potential energy
+           npe;
+    double sum = cpe,
+           sum_past_energy = 0.0,
+           average; //the sum lets us find the average
+    output_to_file(); //writes positions to a file
+    fprintf(energies,"0 %f\n", cpe); 
     fclose(energies);//won't need this until later so we close it
-    sum = cpe; //the average has to include the initial starting PE
     for(c=1;c<m;c++)
     {
         rand_p_mover(); //monte carlo step one
@@ -314,19 +329,25 @@ int main()
         if (guess == true) //if new energy is less than the random number, accept
         {
             output_to_file(); //for just the positions
+            double past_energy = cpe;
             cpe = npe; //updates energy
+            sum_past_energy += past_energy;
             sum += cpe;//accounting
+            helmholtz(sum, sum_past_energy,c); 
         }
         else //hopefully self-explanatory
         {
             //have to actually reject the move!
             rand_p_unmover(); //we reject the move by undoing it
             output_to_file(); //for just the positions (from before the move, i.e.
-                              //system stays the same for another frame
+                              //system stays the same for another frame)
             sum += cpe;
+            helmholtz(sum,sum,c);
             continue;
         }
     }
+    //helmholtz = -k*T*log(helmholtz_log/m);
+    //fprintf(free_energies,"%d %lf\n",c,helmholtz);
     average = sum / (m); //again, hopefully self explanatory
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
