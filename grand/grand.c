@@ -64,16 +64,13 @@ bool positionchecker(int particleID)
             particles[particleID].x[i] -= L;
             return false;
         }
-        if(particles[particleID].x[i] < 0)
+        else if(particles[particleID].x[i] < 0)
         {
             particles[particleID].x[i] += L;
             return false;
         }
-        else
-        {
-            return true;
-        }
     }
+    return true;
 }
 
 //randomish returns a random float between 0 and 1
@@ -323,8 +320,6 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
     else if(flag == 0)//if we MOVED a particle 
     {
         guess = ((double)random()/(double)RAND_MAX);
-        // need new probabilities based on actual factors
-        // so, one for insertion, one for deletion, and one for the move, based on flag
         probability  = exp(-1 * beta * delta);
         if(probability > guess)
         {
