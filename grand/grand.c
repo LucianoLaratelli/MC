@@ -285,7 +285,7 @@ double pecalc()//returns energy in Kelvin
     return pe;
 }
 
-bool move_acceptor(double cpe, double npe, int c, int flag/*, int n*/)
+bool move_acceptor(double cpe, double npe, int c, int flag, int n)
 {
     double delta,
            guess,
