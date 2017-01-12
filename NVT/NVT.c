@@ -346,8 +346,6 @@ int main()
             continue;
         }
     }
-    //helmholtz = -k*T*log(helmholtz_log/m);
-    //fprintf(free_energies,"%d %lf\n",c,helmholtz);
     average = sum / (m); //again, hopefully self explanatory
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;

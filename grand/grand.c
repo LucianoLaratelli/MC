@@ -41,7 +41,7 @@ struct remove_values
     int pick;
     double phi, gamma, delta;
 };
-
+const int
 const int L = 22; //length of one side of the box
 const int T = 101; // kelvin
 const double k = 1.0; //boltzmann factor
@@ -435,6 +435,7 @@ int main()
     m = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
     sumparticles = m;
+                     
     for(c=1;c<max;c++)
     {
         while(m>=0)//we can't have negative particles
