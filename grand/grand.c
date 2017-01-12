@@ -41,7 +41,6 @@ struct remove_values
     int pick;
     double phi, gamma, delta;
 };
-const int
 const int L = 22; //length of one side of the box
 const int T = 101; // kelvin
 const double k = 1.0; //boltzmann factor
@@ -286,7 +285,7 @@ double pecalc()//returns energy in Kelvin
     return pe;
 }
 
-bool move_acceptor(double cpe, double npe, int c, int flag, int n)
+bool move_acceptor(double cpe, double npe, int c, int flag/*, int n*/)
 {
     double delta,
            guess,
@@ -369,6 +368,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
             return false;
         }
     }
+    return true;
 }
 
 double qst_calc(int N, double energy, int c)//sorry
@@ -435,7 +435,6 @@ int main()
     m = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
     sumparticles = m;
-                     
     for(c=1;c<max;c++)
     {
         while(m>=0)//we can't have negative particles
