@@ -1,4 +1,4 @@
-/*****
+/*************************************************************************************************************
 This is a monte carlo method simulator of the grand canonical ensemble, also known as the "mu-V-T" ensemble.
 This program takes a system composed of any number of particles and does one of three moves on it:
 
@@ -6,12 +6,12 @@ This program takes a system composed of any number of particles and does one of 
 2. adds a particle at a random positions
 3. removes a random particle
 
-It outputs : the number of particles per frame, the average number of particles,
+It outputs: the number of particles per frame, the average number of particles,
 and the standard deviation associated with the average
 the energies (in the same manner as the number of particles)
 the chemical potential (per frame)
 a calculated QST per-frame and as an average over all frames
-*****/
+**************************************************************************************************************/
 
 #include <vector>
 #include <math.h>
@@ -352,9 +352,9 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     }
     else if(flag == 2)//if we DESTROYED a particle
     {
-        double oneterm = -(beta*delta)-(beta*relativemu);
-        double acceptance = exp(oneterm);
-        double condition = pool/ (volume * acceptance);
+        double oneterm = -(beta*delta)-(beta*relativemu),
+               acceptance = exp(oneterm),
+               condition = pool/ (volume * acceptance);
         if(condition < 1)
         {
             fprintf(energies,"%d %f \n", c,npe);
@@ -375,17 +375,17 @@ double qst_calc(int N, double energy, int c,double system_temp)//sorry
 {
     FILE * qsts;
     qsts = fopen("qsts.dat","a");
-    double T = system_temp;
-    double average_N = N/c;//<N>
-    double average_N_all_squared = average_N * average_N;//<N>^2
-    double average_energy = energy / c;//<U>
-    double N_squared = average_N * average_N;
-    double average_of_N_squared = N_squared * N_squared;//<N^2>
-    double particles_by_energy = average_N * average_energy;
-    double average_of_particles_by_energy = particles_by_energy / c; //<NU>
-    double numerator = (average_of_particles_by_energy) - (average_N * average_energy);
-    double denominator = average_of_N_squared - average_N_all_squared;
-    double QST = k * T - ( numerator / denominator);
+    double T = system_temp,
+           average_N = N/c,//<N>
+           average_N_all_squared = average_N * average_N,//<N>^2
+           average_energy = energy / c,//<U>
+           N_squared = average_N * average_N,
+           average_of_N_squared = N_squared * N_squared,//<N^2>
+           particles_by_energy = average_N * average_energy,
+           average_of_particles_by_energy = particles_by_energy / c, //<NU>
+           numerator = (average_of_particles_by_energy) - (average_N * average_energy),
+           denominator = average_of_N_squared - average_N_all_squared,
+           QST = k * T - ( numerator / denominator);
     fprintf(qsts, "%d %lf\n", c, QST);
     fclose(qsts);
     return QST;
@@ -414,25 +414,25 @@ int main(int argc, char *argv[])
         printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon, and the temperature of the system, in that order.");
         exit(EXIT_FAILURE);
     }
-    char particle_type[128] = {0};
-    sscanf(argv[1],"%s",particle_type);
-    double particle_mass,
-           sigma,
-           epsilon,
-           system_temp;
-    sscanf(argv[2],"%lf",&particle_mass);
-    sscanf(argv[3],"%lf",&sigma);
-    sscanf(argv[4],"%lf",&epsilon);
-    sscanf(argv[5],"%lf",&system_temp);
     bool guess;
-    double cpe,
-           npe,
-           sumenergy,
-           sumparticles;
+    char particle_type[128] = {0};
     int c,
         n,
         max,
         flag;
+    double particle_mass,
+           sigma,
+           epsilon,
+           system_temp,
+           cpe,
+           npe,
+           sumenergy,
+           sumparticles;
+    sscanf(argv[1],"%s",particle_type);
+    sscanf(argv[2],"%lf",&particle_mass);
+    sscanf(argv[3],"%lf",&sigma);
+    sscanf(argv[4],"%lf",&epsilon);
+    sscanf(argv[5],"%lf",&system_temp);
     FILE * positions;
     FILE * energies;
     FILE * qsts;
