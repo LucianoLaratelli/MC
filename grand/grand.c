@@ -231,14 +231,22 @@ double distfinder(int id_a, int id_b)
            cutoff = 0.5 * L;
     for(int i=0;i<3;i++)
     {
-        delta = fabs(particles[id_a].x[i] - particles[id_b].x[i]);
-        if(delta > cutoff)
+        delta = particles[id_a].x[i] - particles[id_b].x[i];
+        if(fabs(delta) >= cutoff)
         {
-            delta -= cutoff;
+            if(delta>0)
+            {
+                delta -= L;
+            }
+            if(delta<0)
+            {
+                delta += L;
+            }
         }
         delta2 += delta * delta;
     }
     dist = sqrt(delta2);
+    printf("%lf \n", dist);
     return dist;
 }
 
@@ -402,7 +410,7 @@ void histogram(int n)
     double boxes[L] = {0};//initialize your fucking variables 
     for(int I = 0;I<n-1;I++)
     {
-        for(int K = 1;K<n;K++)
+        for(int K = I + 1;K<n;K++)
         {
             double dist = distfinder(I,K);
             for(int M = 1;M<L;M++)
