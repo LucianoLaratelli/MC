@@ -19,6 +19,7 @@ a calculated QST per-frame and as an average over all frames
 #include <time.h>
 #include <random>
 #include <stdlib.h>
+#include <string.h>
 
 typedef struct particle_particle
 {
@@ -299,7 +300,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
           lambda,
           lambdacubed;
     // NEED TO CALCULATE MU PER MOVE (IT SHOULD BE MINIMIZED AFTER N MOVES)
-    int pool = particles.size();
+    int pool = n;
     int poolplus = pool + 1;
     double volume = L * L * L;
     double density = pool / volume;
@@ -390,7 +391,7 @@ double qst_calc(int N, double energy, int c,double system_temp)//sorry
     return QST;
 }
 
-void output(char particle_type)
+void output(char *particle_type)
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
@@ -400,7 +401,7 @@ void output(char particle_type)
     fprintf(positions, "%d \n\n",pool);
     for(p=0;p<pool;p++)
     {
-        fprintf(positions, "%c %lf %lf %lf\n",particle_type, particles[p].x[0],particles[p].x[1], particles[p].x[2]);
+        fprintf(positions, "%s %lf %lf %lf\n",particle_type, particles[p].x[0],particles[p].x[1], particles[p].x[2]);
     }
     fclose(positions); 
     return;
@@ -413,16 +414,16 @@ int main(int argc, char *argv[])
         printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon, and the temperature of the system, in that order.");
         exit(EXIT_FAILURE);
     }
-    char particle_type;
-    particle_type = *argv[0];
+    char particle_type[128] = {0};
+    sscanf(argv[1],"%s",particle_type);
     double particle_mass,
            sigma,
            epsilon,
            system_temp;
-    sscanf(argv[1],"%lf",&particle_mass);
-    sscanf(argv[2],"%lf",&sigma);
-    sscanf(argv[3],"%lf",&epsilon);
-    sscanf(argv[4],"%lf",&system_temp);
+    sscanf(argv[2],"%lf",&particle_mass);
+    sscanf(argv[3],"%lf",&sigma);
+    sscanf(argv[4],"%lf",&epsilon);
+    sscanf(argv[5],"%lf",&system_temp);
     bool guess;
     double cpe,
            npe,
