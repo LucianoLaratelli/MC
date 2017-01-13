@@ -400,26 +400,36 @@ double qst_calc(int N, double energy, int c,double system_temp)//sorry
 
 double sphere_volume(int radius)
 {
-    return 1.3 * M_PI * radius * radius * radius;
+    return 4.0/3.0 * M_PI * radius * radius * radius;
 }
 
 void histogram(int n)
 {
+    const int nBins = (L/2 + 1) * 10;
+    double binDelta = L/2.0 / (double)nBins;
+    double bottom = 0;
+    double top = binDelta;
     double num_density = (double)n / (double)(L*L*L);
     double expected_number_of_particles;
-    double boxes[L] = {0};//initialize your fucking variables 
+    double boxes[nBins] = {0};//initialize your fucking variables 
     for(int I = 0;I<n-1;I++)
     {
         for(int K = I + 1;K<n;K++)
         {
             double dist = distfinder(I,K);
-            for(int M = 1;M<L;M++)
+            for(int M = 0;M<nBins;M++)
             {
-                if(dist < (L*.5) && dist < M && dist>=(M-1))
+                if(dist < (L*.5) && dist < top && dist>=bottom)
                 {
                     boxes[M-1]++;
+                    break;
                 }
+                bottom += binDelta;
+                top += binDelta;
             }
+
+            bottom = 0;
+            top = binDelta;
         }
     }
     printf("number of particles: %d\n", n);
