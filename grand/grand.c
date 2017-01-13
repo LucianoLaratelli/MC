@@ -19,7 +19,6 @@ a calculated QST per-frame and as an average over all frames
 #include <time.h>
 #include <random>
 #include <stdlib.h>
-#include <string.h>
 
 typedef struct particle_particle
 {
@@ -391,6 +390,45 @@ double qst_calc(int N, double energy, int c,double system_temp)//sorry
     return QST;
 }
 
+double sphere_volume(int radius)
+{
+    return 1.3 * M_PI * radius * radius * radius;
+}
+
+void histogram(int n)
+{
+    double num_density = (double)n / (double)(L*L*L);
+    double expected_number_of_particles;
+    double boxes[L] = {0};//initialize your fucking variables 
+    for(int I = 0;I<n-1;I++)
+    {
+        for(int K = 1;K<n;K++)
+        {
+            double dist = distfinder(I,K);
+            for(int M = 1;M<L;M++)
+            {
+                if(dist < (L*.5) && dist < M && dist>=(M-1))
+                {
+                    boxes[M-1]++;
+                }
+            }
+        }
+    }
+    printf("number of particles: %d\n", n);
+    double previous_sphere_volume = 0;
+    for(int I = 1;I<=L;I++)
+    {
+        printf("%lf ",boxes[I-1]);
+        double current_sphere_volume = sphere_volume(I);
+        double shell_size = current_sphere_volume - previous_sphere_volume;
+        previous_sphere_volume = current_sphere_volume;
+        expected_number_of_particles = shell_size * num_density;
+        boxes[I-1] /= expected_number_of_particles;
+        printf("%f ", boxes[I-1]);
+    }
+    return;
+}
+
 void output(char *particle_type)
 {
     FILE * positions;
@@ -480,6 +518,7 @@ int main(int argc, char *argv[])
             }
         }
     }
+    histogram(n);
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
