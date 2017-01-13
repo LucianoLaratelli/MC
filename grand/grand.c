@@ -18,6 +18,7 @@ a calculated QST per-frame and as an average over all frames
 #include <stdio.h>
 #include <time.h>
 #include <random>
+#include <stdlib.h>
 
 typedef struct particle_particle
 {
@@ -42,7 +43,6 @@ struct remove_values
     double phi, gamma, delta;
 };
 const int L = 22; //length of one side of the box
-const int T = 101; // kelvin
 const double k = 1.0; //boltzmann factor
 const double h = 6.626 * pow(10,-34);//planck constant
 
@@ -242,14 +242,12 @@ double distfinder(int id_a, int id_b)
     return dist;
 }
 
-double pecalc()//returns energy in Kelvin
+double pecalc(double sigma, double epsilon)//returns energy in Kelvin
 {
     int b, //counter variables
         c,
         pool = particles.size();
-    double sigma = 3.371914,// LJ, in angstroms 
-           epsilon = 128.326802,//LJ, in kelvin 
-           r,
+    double r,
            pe = 0.00;
     double s2,//powers of sigma
            s6,
@@ -285,9 +283,10 @@ double pecalc()//returns energy in Kelvin
     return pe;
 }
 
-bool move_acceptor(double cpe, double npe, int c, int flag, int n)
+bool move_acceptor(double cpe, double npe, int c, int flag, int n, double particle_mass,double system_temp)
 {
-    double delta,
+   double  T = system_temp,
+           delta,
            guess,
            probability,
            mu,
@@ -305,7 +304,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
     double volume = L * L * L;
     double density = pool / volume;
     double pi = M_PI;
-    m = 39.948;//AMU
+    m = particle_mass;//AMU
     lambda = (h)/(sqrt(2*pi*m*k*T)) ;
     lambdacubed = lambda * lambda * lambda;
     mu = k * T * log(lambdacubed) * density;
@@ -371,10 +370,11 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n)
     return true;
 }
 
-double qst_calc(int N, double energy, int c)//sorry
+double qst_calc(int N, double energy, int c,double system_temp)//sorry
 {
     FILE * qsts;
     qsts = fopen("qsts.dat","a");
+    double T = system_temp;
     double average_N = N/c;//<N>
     double average_N_all_squared = average_N * average_N;//<N>^2
     double average_energy = energy / c;//<U>
@@ -390,7 +390,7 @@ double qst_calc(int N, double energy, int c)//sorry
     return QST;
 }
 
-void output()
+void output(char particle_type)
 {
     FILE * positions;
     positions = fopen("positions.xyz","a");
@@ -400,21 +400,36 @@ void output()
     fprintf(positions, "%d \n\n",pool);
     for(p=0;p<pool;p++)
     {
-        fprintf(positions, "Ar %lf %lf %lf\n", particles[p].x[0],particles[p].x[1], particles[p].x[2]);
+        fprintf(positions, "%c %lf %lf %lf\n",particle_type, particles[p].x[0],particles[p].x[1], particles[p].x[2]);
     }
     fclose(positions); 
     return;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
+    if(argc != 6)
+    {
+        printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon, and the temperature of the system, in that order.");
+        exit(EXIT_FAILURE);
+    }
+    char particle_type;
+    particle_type = *argv[0];
+    double particle_mass,
+           sigma,
+           epsilon,
+           system_temp;
+    sscanf(argv[1],"%lf",&particle_mass);
+    sscanf(argv[2],"%lf",&sigma);
+    sscanf(argv[3],"%lf",&epsilon);
+    sscanf(argv[4],"%lf",&system_temp);
     bool guess;
     double cpe,
            npe,
            sumenergy,
            sumparticles;
     int c,
-        m,
+        n,
         max,
         flag;
     FILE * positions;
@@ -425,41 +440,41 @@ int main()
     qsts = fopen("qsts.dat","w");
     fclose(positions);
     fclose(qsts);
-    cpe = pecalc();//we find the starting potential and call it our "current" one
+    cpe = pecalc(sigma, epsilon);//we find the starting potential and call it our "current" one
     fprintf(energies,"0 %f\n", cpe);
     fclose(energies);
     printf("How many tries do you want?\n");
     clock_t begin = clock();
     fflush(stdout);//forces printf out of buffer
     scanf("%i",&max);
-    m = particles.size();
+    n = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
-    sumparticles = m;
+    sumparticles = n;
     for(c=1;c<max;c++)
     {
-        while(m>=0)//we can't have negative particles
+        while(n>=0)//we can't have negative particles
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
-            npe = pecalc();//"new potential energy" in K
-            guess = move_acceptor(cpe,npe,c,flag,m);//move acceptor rejects or accepts the move
+            npe = pecalc(sigma,epsilon);//"new potential energy" in K
+            guess = move_acceptor(cpe,npe,c,flag,n,particle_mass,system_temp);//move acceptor rejects or accepts the move
             if(guess == true)
             {
-                m = particles.size();
-                output();
+                n = particles.size();
+                output(particle_type);
                 cpe = npe;//updates the current energy
                 sumenergy += cpe;//adds to the running total
-                sumparticles += m;//see above
-                qst_calc(sumparticles,sumenergy,c);
+                sumparticles += n;//see above
+                qst_calc(sumparticles,sumenergy,c,system_temp);
                 break;//breaks out of the while loop, increments c
             }
             else
             {
-                m = particles.size();
+                n = particles.size();
                 move_undoer(flag);//uses the flag to undo a move if necessary
-                output();
+                output(particle_type);
                 sumenergy += cpe;//adds the old energy to the average
-                sumparticles += m;
-                qst_calc(sumparticles,sumenergy,c);
+                sumparticles += n;
+                qst_calc(sumparticles,sumenergy,c,system_temp);
                 break;//breaks out of the while loop, increments c
             }
         }
@@ -469,5 +484,3 @@ int main()
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
     return 0;
 }
-//does fugitive work?
-//I think it does
