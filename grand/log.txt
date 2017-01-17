@@ -1,3 +1,5 @@
+Tue Jan 17 12:10:52 2017 -0500, removing old files
+Tue Jan 17 12:08:14 2017 -0500, add log file to track commits in format for methods project; change to gitignore
 Sun Jan 15 12:58:05 2017 -0500, small gitignore
 Fri Jan 13 16:02:36 2017 -0500, some changes to histogram() to try to fix an error where vast majority are way too close
 Fri Jan 13 14:48:32 2017 -0500, messing around with cutoffs
