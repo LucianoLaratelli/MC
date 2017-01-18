@@ -108,9 +108,9 @@ void particlemover(int pick)
     int i = false;
     while(i == false)
     {
-        double phi   = (randomish()-0.5)*L,
-               gamma = (randomish()-0.5)*L,
-               delta = (randomish()-0.5)*L;
+        double phi   = (randomish())*L,
+               gamma = (randomish())*L,
+               delta = (randomish())*L;
         //these next few lines store our moves in a struct in case they suck and we
         //need to undo the move
         move.pick = pick;
@@ -236,7 +236,7 @@ double distfinder(int id_a, int id_b)
         {
             delta -= L;
         }
-        if(delta<-cutoff)
+        if(delta<=-cutoff)
         {
             delta += L;
         }
