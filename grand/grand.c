@@ -414,7 +414,7 @@ void histogram(int n)
         for(int K = I + 1;K<n;K++)
         {
             double dist = distfinder(I,K);
-            for(int M = 0;M<nBins;M++)
+            for(int M = 1;M<=nBins;M++)
             {
                 if(dist < (L*.5) && dist < top && dist>=bottom)
                 {
