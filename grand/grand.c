@@ -232,21 +232,18 @@ double distfinder(int id_a, int id_b)
     for(int i=0;i<3;i++)
     {
         delta = particles[id_a].x[i] - particles[id_b].x[i];
-        if(fabs(delta) >= cutoff)
+        if(delta>= cutoff)
         {
-            if(delta>0)
-            {
-                delta -= L;
-            }
-            if(delta<0)
-            {
-                delta += L;
-            }
+            delta -= L;
+        }
+        if(delta<-cutoff)
+        {
+            delta += L;
         }
         delta2 += delta * delta;
     }
     dist = sqrt(delta2);
-    printf("%lf \n", dist);
+    //printf("%lf \n", dist);
     return dist;
 }
 
@@ -411,7 +408,7 @@ void histogram(int n)
     double top = binDelta;
     double num_density = (double)n / (double)(L*L*L);
     double expected_number_of_particles;
-    double boxes[nBins] = {0};//initialize your fucking variables 
+    double boxes[nBins] = {0};//initialize all the things
     for(int I = 0;I<n-1;I++)
     {
         for(int K = I + 1;K<n;K++)
