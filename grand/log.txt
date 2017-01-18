@@ -1,3 +1,6 @@
+Wed Jan 18 08:26:27 2017 -0500, Merge branch 'master' of github.com:pirateofitaly/MC
+Wed Jan 18 08:25:17 2017 -0500, Change logic of distfinder
+Tue Jan 17 12:11:59 2017 -0500, see previous commit
 Tue Jan 17 12:10:52 2017 -0500, removing old files
 Tue Jan 17 12:08:14 2017 -0500, add log file to track commits in format for methods project; change to gitignore
 Sun Jan 15 12:58:05 2017 -0500, small gitignore
@@ -25,5 +28,3 @@ Mon Nov 7 17:09:46 2016 -0500, One seg fault gone
 Sat Nov 5 23:15:53 2016 -0400, Seg fault smh
 Sat Nov 5 12:41:42 2016 -0400, updating gitignore
 Sat Nov 5 12:41:12 2016 -0400, Fleshing out the code
-Mon Oct 3 20:01:38 2016 -0400, A new project! This is for a grand-canonical mote carlo simulation; the file “vector” is for me to play around with C++ vectors
-Mon Oct 3 14:39:18 2016 -0400, seed!
