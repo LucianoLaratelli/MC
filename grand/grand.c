@@ -402,6 +402,8 @@ double sphere_volume(int radius)
 
 void histogram(int n)
 {
+    FILE * histo;
+    histo = fopen("histogram.txt","a");
     const int nBins = (L/2 + 1) * 10;
     double binDelta = L/2.0 / (double)nBins;
     double bottom = 0;
@@ -439,7 +441,7 @@ void histogram(int n)
         previous_sphere_volume = current_sphere_volume;
         expected_number_of_particles = shell_size * num_density;
         boxes[I-1] /= expected_number_of_particles;
-        printf("%f ", boxes[I-1]);
+        fprintf(histo,"%lf\n",boxes[I-1]);
     }
     return;
 }
@@ -489,9 +491,12 @@ int main(int argc, char *argv[])
     FILE * positions;
     FILE * energies;
     FILE * qsts;
+    FILE * histo;
+    histo = fopen("histo.txt","w");
     positions = fopen("positions.xyz","w");
     energies = fopen("energies.dat","w");
     qsts = fopen("qsts.dat","w");
+    fclose(histo);
     fclose(positions);
     fclose(qsts);
     cpe = pecalc(sigma, epsilon);//we find the starting potential and call it our "current" one
