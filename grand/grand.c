@@ -396,10 +396,12 @@ double sphere_volume(int radius)
 //the system at its last frame
 void radialdistribution(int n)
 {
-    FILE * radial;
-    radial = fopen("radialdistribution.txt","a");
+    FILE * weightedradial;
+    FILE * unweightedradial;
+    unweightedradial = fopen("unweightedradialdistribution.txt","a");
+    weightedradial = fopen("weightedradialdistribution.txt","a");
     const int nBins = (L/2 + 1) * 10;
-    double binDelta = L/2.0 / (double)nBins,
+    double binDelta = L/(2.0 * (double)nBins),
            bottom = 0,
            top = binDelta,
            num_density = (double)n / (double)(L*L*L),
@@ -420,7 +422,6 @@ void radialdistribution(int n)
                 bottom += binDelta;
                 top += binDelta;
             }
-
             bottom = 0;
             top = binDelta;
         }
@@ -429,13 +430,13 @@ void radialdistribution(int n)
     double previous_sphere_volume = 0;
     for(int I = 1;I<=nBins;I++)
     {
-        printf("%lf ",boxes[I-1]);
+        fprintf(unweightedradial,"%lf\n",boxes[I-1]);
         double current_sphere_volume = sphere_volume(I);
         double shell_size = current_sphere_volume - previous_sphere_volume;
         previous_sphere_volume = current_sphere_volume;
         expected_number_of_particles = shell_size * num_density;
         boxes[I-1] /= expected_number_of_particles;
-        fprintf(radial,"%lf\n",boxes[I-1]);
+        fprintf(weightedradial,"%lf\n",boxes[I-1]);
     }
     return;
 }
@@ -486,12 +487,17 @@ int main(int argc, char *argv[])
     FILE * positions;
     FILE * energies;
     FILE * qsts;
-    FILE * radial;
-    radial = fopen("radialdistribution.txt","w");
+    FILE * unweightedradial;
+    FILE * weightedradial;
+    FILE * timing;
+    timing = fopen("timing.txt","a");
+    unweightedradial = fopen("unweightedradialdistribution.txt","w");
+    weightedradial = fopen("weightedradialdistribution.txt","w");
     positions = fopen("positions.xyz","w");
     energies = fopen("energies.dat","w");
     qsts = fopen("qsts.dat","w");
-    fclose(radial);
+    fclose(weightedradial);
+    fclose(unweightedradial);
     fclose(positions);
     fclose(qsts);
     cpe = pecalc(sigma, epsilon);//we find the starting potential and call it our "current" one
@@ -536,6 +542,7 @@ int main(int argc, char *argv[])
     radialdistribution(n);
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
+    fprintf(timing,"%d %lf\n",max,time_spent);
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
     return 0;
 }
