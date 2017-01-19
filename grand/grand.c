@@ -43,6 +43,7 @@ struct remove_values
     double phi, gamma, delta;
 };
 const int L = 22; //length of one side of the box
+const double cutoff = L * 0.5;
 const double k = 1.0; //boltzmann factor
 const double h = 6.626 * pow(10,-34);//planck constant
 
@@ -75,16 +76,9 @@ bool positionchecker(int particleID)
 //randomish returns a random float between 0 and 1
 double randomish()
 {
-    static int first_time_through = 1;
-    if(first_time_through)
-    {
-        srandom(time(NULL));
-        first_time_through = 0;
-    }
     double r = random();
     return r/((double)RAND_MAX + 1);
 }
-
 
 void particleunmover()
 {
@@ -102,7 +96,7 @@ void particleunmover()
 //particlemover moves a random particle a random distance
 void particlemover(int pick)
 {
-    //phi,gamma, and delta are random floats between -L/2 and L/2
+    //phi,gamma, and delta are random floats between 0 and L/
     //now we use a "bool counter" to make sure we don't move a particle
     //out of the box. Not sure how well this will work but oh well
     int i = false;
@@ -133,7 +127,7 @@ void particlemover(int pick)
 }
 
 
-//the creator adds particles to the system if it is chosen to do so by move_chooser
+//the topcreator adds particles to the system if it is chosen to do so by move_chooser
 //below. The coordinates of the new particle are random based on the length 
 //of the box
 void thecreator()
@@ -187,7 +181,7 @@ int move_chooser()
             particlemover(pick);
             flag = 0;
         }
-        else if(choice>2.0)
+        else if(choice>=2.0)
         {
             thecreator();
             pool = particles.size();
@@ -227,16 +221,15 @@ double distfinder(int id_a, int id_b)
 {
     double dist,
            delta,
-           delta2 = 0.00,
-           cutoff = 0.5 * L;
+           delta2 = 0.00;
     for(int i=0;i<3;i++)
     {
         delta = particles[id_a].x[i] - particles[id_b].x[i];
-        if(delta>= cutoff)
+        if(delta >= cutoff)
         {
             delta -= L;
         }
-        if(delta<=-cutoff)
+        if(delta <=-cutoff)
         {
             delta += L;
         }
@@ -263,7 +256,6 @@ double pecalc(double sigma, double epsilon)//returns energy in Kelvin
            r12;
     double sor6,//powers of sigma over r for the potential equation
            sor12;
-    double cutoff = L * 0.5;
     s2 = sigma * sigma;
     s6 = s2 * s2 * s2;
     s12 = s6 * s6;
@@ -283,7 +275,7 @@ double pecalc(double sigma, double epsilon)//returns energy in Kelvin
             sor6 = s6 * r6;
             sor12 = s12 * r12; 
             pe += (4 * epsilon * (sor12 - sor6));
-        }
+       }
     }
     return pe;
 }
@@ -292,7 +284,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
 {
    double  T = system_temp,
            delta,
-           guess,
+           random,
            probability,
            mu,
            beta = 1 / (k * T);
@@ -314,6 +306,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     lambdacubed = lambda * lambda * lambda;
     mu = k * T * log(lambdacubed) * density;
     relativemu = mu -( k * T * log(lambdacubed));
+    random = randomish();
     if(delta < 0)
     {
         fprintf(energies,"%d %f \n", c,npe);
@@ -322,9 +315,8 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     }
     else if(flag == 0)//if we MOVED a particle 
     {
-        guess = ((double)random()/(double)RAND_MAX);
         probability  = exp(-1 * beta * delta);
-        if(probability > guess)
+        if(probability > random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);
@@ -341,7 +333,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     {
         double acceptance = -(beta*delta) + (beta*relativemu) +(log(volume/poolplus));
         double condition = exp(acceptance);
-        if(condition < 1)
+        if(condition > random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);
@@ -359,7 +351,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
         double oneterm = -(beta*delta)-(beta*relativemu),
                acceptance = exp(oneterm),
                condition = pool/ (volume * acceptance);
-        if(condition < 1)
+        if(condition > random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);
@@ -400,17 +392,19 @@ double sphere_volume(int radius)
     return 4.0/3.0 * M_PI * radius * radius * radius;
 }
 
-void histogram(int n)
+//radialdistribution computes the radial distribution function for
+//the system at its last frame
+void radialdistribution(int n)
 {
-    FILE * histo;
-    histo = fopen("histogram.txt","a");
+    FILE * radial;
+    radial = fopen("radialdistribution.txt","a");
     const int nBins = (L/2 + 1) * 10;
-    double binDelta = L/2.0 / (double)nBins;
-    double bottom = 0;
-    double top = binDelta;
-    double num_density = (double)n / (double)(L*L*L);
-    double expected_number_of_particles;
-    double boxes[nBins] = {0};//initialize all the things
+    double binDelta = L/2.0 / (double)nBins,
+           bottom = 0,
+           top = binDelta,
+           num_density = (double)n / (double)(L*L*L),
+           expected_number_of_particles,
+           boxes[nBins] = {0};//initialize all the things
     for(int I = 0;I<n-1;I++)
     {
         for(int K = I + 1;K<n;K++)
@@ -418,7 +412,7 @@ void histogram(int n)
             double dist = distfinder(I,K);
             for(int M = 1;M<=nBins;M++)
             {
-                if(dist < (L*.5) && dist < top && dist>=bottom)
+                if(dist < (cutoff) && dist < top && dist>=bottom)
                 {
                     boxes[M-1]++;
                     break;
@@ -433,7 +427,7 @@ void histogram(int n)
     }
     printf("number of particles: %d\n", n);
     double previous_sphere_volume = 0;
-    for(int I = 1;I<=L;I++)
+    for(int I = 1;I<=nBins;I++)
     {
         printf("%lf ",boxes[I-1]);
         double current_sphere_volume = sphere_volume(I);
@@ -441,7 +435,7 @@ void histogram(int n)
         previous_sphere_volume = current_sphere_volume;
         expected_number_of_particles = shell_size * num_density;
         boxes[I-1] /= expected_number_of_particles;
-        fprintf(histo,"%lf\n",boxes[I-1]);
+        fprintf(radial,"%lf\n",boxes[I-1]);
     }
     return;
 }
@@ -469,6 +463,7 @@ int main(int argc, char *argv[])
         printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon, and the temperature of the system, in that order.");
         exit(EXIT_FAILURE);
     }
+    srandom(time(NULL));
     bool guess;
     char particle_type[128] = {0};
     int c,
@@ -491,12 +486,12 @@ int main(int argc, char *argv[])
     FILE * positions;
     FILE * energies;
     FILE * qsts;
-    FILE * histo;
-    histo = fopen("histo.txt","w");
+    FILE * radial;
+    radial = fopen("radialdistribution.txt","w");
     positions = fopen("positions.xyz","w");
     energies = fopen("energies.dat","w");
     qsts = fopen("qsts.dat","w");
-    fclose(histo);
+    fclose(radial);
     fclose(positions);
     fclose(qsts);
     cpe = pecalc(sigma, epsilon);//we find the starting potential and call it our "current" one
@@ -538,7 +533,7 @@ int main(int argc, char *argv[])
             }
         }
     }
-    histogram(n);
+    radialdistribution(n);
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
