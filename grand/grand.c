@@ -400,43 +400,39 @@ void radialdistribution(int n)
     FILE * unweightedradial;
     unweightedradial = fopen("unweightedradialdistribution.txt","a");
     weightedradial = fopen("weightedradialdistribution.txt","a");
-    const int nBins = (L/2 + 1) * 10;
-    double binDelta = L/(2.0 * (double)nBins),
-           bottom = 0,
-           top = binDelta,
+    const int nBins = (L/2 + 1) * 10; //total number of bins
+    double BinSize = L/(2.0 * (double)nBins),
            num_density = (double)n / (double)(L*L*L),
            expected_number_of_particles,
-           boxes[nBins] = {0};//initialize all the things
+           boxes[nBins] = {0},
+           current_shell,
+           previous_shell,
+           shell_volume_delta,
+           dist;
+    int IK;
     for(int I = 0;I<n-1;I++)
     {
         for(int K = I + 1;K<n;K++)
         {
-            double dist = distfinder(I,K);
-            for(int M = 1;M<=nBins;M++)
+            dist = distfinder(I,K);
+            if(dist < cutoff)
             {
-                if(dist < (cutoff) && dist < top && dist>=bottom)
-                {
-                    boxes[M-1]++;
-                    break;
-                }
-                bottom += binDelta;
-                top += binDelta;
+                IK = int(dist/BinSize);
+                boxes[IK] += 2;
             }
-            bottom = 0;
-            top = binDelta;
         }
     }
     printf("number of particles: %d\n", n);
-    double previous_sphere_volume = 0;
+    previous_shell = 0;
     for(int I = 1;I<=nBins;I++)
     {
         fprintf(unweightedradial,"%lf\n",boxes[I-1]);
-        double current_sphere_volume = sphere_volume(I);
-        double shell_size = current_sphere_volume - previous_sphere_volume;
-        previous_sphere_volume = current_sphere_volume;
-        expected_number_of_particles = shell_size * num_density;
-        boxes[I-1] /= expected_number_of_particles;
+        current_shell = I;
+        shell_volume_delta = (sphere_volume(current_shell) - sphere_volume(previous_shell)); 
+        expected_number_of_particles = shell_volume_delta * num_density;
+        boxes[I-1] /= (expected_number_of_particles);
         fprintf(weightedradial,"%lf\n",boxes[I-1]);
+        previous_shell = current_shell;
     }
     return;
 }
