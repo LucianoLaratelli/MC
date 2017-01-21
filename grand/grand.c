@@ -387,8 +387,9 @@ double qst_calc(int N, double energy, int c,double system_temp)//sorry
     return QST;
 }
 
-double sphere_volume(int radius)
+double sphere_volume(double diameter)
 {
+    double radius = diameter/2;//this is important
     return 4.0/3.0 * M_PI * radius * radius * radius;
 }
 
@@ -485,8 +486,8 @@ int main(int argc, char *argv[])
     FILE * qsts;
     FILE * unweightedradial;
     FILE * weightedradial;
-    FILE * timing;
-    timing = fopen("timing.txt","a");
+    FILE * stats;
+    stats = fopen("stats.txt","a");
     unweightedradial = fopen("unweightedradialdistribution.txt","w");
     weightedradial = fopen("weightedradialdistribution.txt","w");
     positions = fopen("positions.xyz","w");
@@ -538,7 +539,7 @@ int main(int argc, char *argv[])
     radialdistribution(n);
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
-    fprintf(timing,"%d %lf\n",max,time_spent);
+    fprintf(stats,"Number of iterations: %d Length of run: %lf Final number of particles: %d \n",max,time_spent,n);
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
     return 0;
 }
