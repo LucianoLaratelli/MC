@@ -435,6 +435,8 @@ void radialdistribution(int n)
         fprintf(weightedradial,"%lf\n",boxes[I-1]);
         previous_shell = current_shell;
     }
+    fclose(unweightedradial);
+    fclose(weightedradial);
     return;
 }
 
@@ -456,9 +458,9 @@ void output(char *particle_type)
 
 int main(int argc, char *argv[])
 {
-    if(argc != 6)
+    if(argc != 7)
     {
-        printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon, and the temperature of the system, in that order.");
+        printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon,the temperature of the system, and the number of desired iterations, in that order.");
         exit(EXIT_FAILURE);
     }
     srandom(time(NULL));
@@ -481,6 +483,7 @@ int main(int argc, char *argv[])
     sscanf(argv[3],"%lf",&sigma);
     sscanf(argv[4],"%lf",&epsilon);
     sscanf(argv[5],"%lf",&system_temp);
+    sscanf(argv[6],"%d",&max);
     FILE * positions;
     FILE * energies;
     FILE * qsts;
@@ -500,10 +503,7 @@ int main(int argc, char *argv[])
     cpe = pecalc(sigma, epsilon);//we find the starting potential and call it our "current" one
     fprintf(energies,"0 %f\n", cpe);
     fclose(energies);
-    printf("How many tries do you want?\n");
     clock_t begin = clock();
-    fflush(stdout);//forces printf out of buffer
-    scanf("%i",&max);
     n = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
     sumparticles = n;
@@ -540,6 +540,7 @@ int main(int argc, char *argv[])
     clock_t end = clock();
     double time_spent = (double)(end-begin) / CLOCKS_PER_SEC;
     fprintf(stats,"Number of iterations: %d Length of run: %lf Final number of particles: %d \n",max,time_spent,n);
+    fclose(stats);
     printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
     return 0;
 }

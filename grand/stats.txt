@@ -5,3 +5,13 @@ Number of iterations: 10000 Length of run: 1.940939 Final number of particles: 9
 Number of iterations: 1000 Length of run: 0.075881 Final number of particles: 14 
 Number of iterations: 100000 Length of run: 33.000738 Final number of particles: 14 
 Number of iterations: 25000 Length of run: 8.214673 Final number of particles: 124 
+Number of iterations: 15000 Length of run: 80.170310 Final number of particles: 30 
+Number of iterations: 15000 Length of run: 25.873322 Final number of particles: 5 
+Number of iterations: 15000 Length of run: 79.834111 Final number of particles: 68 
+Number of iterations: 10000 Length of run: 263.055473 Final number of particles: 215 
+Number of iterations: 6900 Length of run: 11.910519 Final number of particles: 30 
+Number of iterations: 15000 Length of run: 3.965026 Final number of particles: 99 
+Number of iterations: 25000 Length of run: 3.229355 Final number of particles: 75 
+Number of iterations: 25000 Length of run: 8.478159 Final number of particles: 72 
+Number of iterations: 25000 Length of run: 4.848171 Final number of particles: 118 
+Number of iterations: 25000 Length of run: 160.916742 Final number of particles: 189 
