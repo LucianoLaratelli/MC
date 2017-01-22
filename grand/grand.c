@@ -42,6 +42,7 @@ struct remove_values
     int pick;
     double phi, gamma, delta;
 };
+
 const int L = 22; //length of one side of the box
 const double cutoff = L * 0.5;
 const double k = 1.0; //boltzmann factor
@@ -61,12 +62,12 @@ bool positionchecker(int particleID)
     { 
         if(particles[particleID].x[i] >= L) 
         { 
-            particles[particleID].x[i] -= L;
+            //particles[particleID].x[i] -= L;
             return false;
         }
         else if(particles[particleID].x[i] < 0)
         {
-            particles[particleID].x[i] += L;
+            //particles[particleID].x[i] += L;
             return false;
         }
     }
@@ -92,11 +93,10 @@ void particleunmover()
     return;
 }
 
-
 //particlemover moves a random particle a random distance
 void particlemover(int pick)
 {
-    //phi,gamma, and delta are random floats between 0 and L/
+    //phi,gamma, and delta are random floats between 0 and L
     //now we use a "bool counter" to make sure we don't move a particle
     //out of the box. Not sure how well this will work but oh well
     int i = false;
@@ -507,16 +507,9 @@ int main(int argc, char *argv[])
     n = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
     sumparticles = n;
-    printf("Starting run now\n");
+    //printf("Starting run now\n");
     for(c=1;c<max;c++)
     {
-        for(double I=0;I<1;I+=.1)
-        {       
-            if(c==(I*max))
-            {
-                printf("%lf%%done!\n",I*100);
-            }
-        }
         while(n>=0)//we can't have negative particles
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
