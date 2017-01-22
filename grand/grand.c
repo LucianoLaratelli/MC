@@ -507,8 +507,16 @@ int main(int argc, char *argv[])
     n = particles.size();
     sumenergy = cpe;//the sum has to include the initial starting energy
     sumparticles = n;
+    printf("Starting run now\n");
     for(c=1;c<max;c++)
     {
+        for(double I=0;I<1;I+=.1)
+        {       
+            if(c==(I*max))
+            {
+                printf("%lf%%done!\n",I*100);
+            }
+        }
         while(n>=0)//we can't have negative particles
         {
             flag = move_chooser();//first step of the monte carlo, also stores which move we did in case we need to undo it
