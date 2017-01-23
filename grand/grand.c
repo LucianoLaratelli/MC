@@ -62,12 +62,12 @@ bool positionchecker(int particleID)
     { 
         if(particles[particleID].x[i] >= L) 
         { 
-            //particles[particleID].x[i] -= L;
+            particles[particleID].x[i] -= L;
             return false;
         }
         else if(particles[particleID].x[i] < 0)
         {
-            //particles[particleID].x[i] += L;
+            particles[particleID].x[i] += L;
             return false;
         }
     }
