@@ -304,8 +304,8 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     m = particle_mass;//AMU
     lambda = (h)/(sqrt(2*pi*m*k*T)) ;
     lambdacubed = lambda * lambda * lambda;
-    mu = k * T * log(lambdacubed) * density;
-    relativemu = mu -( k * T * log(lambdacubed));
+    relativemu = k * T * log(lambdacubed) * density;
+    //relativemu = mu -( k * T * log(lambdacubed));
     random = randomish();
     if(delta < 0)
     {
@@ -431,7 +431,7 @@ void radialdistribution(int n)
         current_shell = I;
         shell_volume_delta = (sphere_volume(current_shell) - sphere_volume(previous_shell)); 
         expected_number_of_particles = shell_volume_delta * num_density;
-        boxes[I-1] /= (expected_number_of_particles);
+        boxes[I-1] /= expected_number_of_particles;
         fprintf(weightedradial,"%lf\n",boxes[I-1]);
         previous_shell = current_shell;
     }
