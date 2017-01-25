@@ -43,9 +43,9 @@ struct remove_values
     double phi, gamma, delta;
 };
 
-const int L = 22; //length of one side of the box
+const int L = 29; //length of one side of the box
 const double cutoff = L * 0.5;
-const double k = 1.0; //boltzmann factor
+const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10,-34);//planck constant
 
 std::vector <particle> particles;
@@ -280,34 +280,25 @@ double pecalc(double sigma, double epsilon)//returns energy in Kelvin
     return pe;
 }
 
+/*********************************************************************************************************
+ * move_acceptor accepts or rejects a move based on page 130 of UMS by Frenkel and Smit.                 *
+ *********************************************************************************************************/
 bool move_acceptor(double cpe, double npe, int c, int flag, int n, double particle_mass,double system_temp)
 {
-   double  T = system_temp,
-           delta,
-           random,
-           probability,
-           mu,
-           beta = 1 / (k * T);
     FILE * energies;
     energies = fopen("energies.dat","a");
-    delta = npe - cpe;
-    double relativemu,
-          m,
-          lambda,
-          lambdacubed;
-    // NEED TO CALCULATE MU PER MOVE (IT SHOULD BE MINIMIZED AFTER N MOVES)
-    int pool = n;
-    int poolplus = pool + 1;
-    double volume = L * L * L;
-    double density = pool / volume;
-    double pi = M_PI;
-    m = particle_mass;//AMU
-    lambda = (h)/(sqrt(2*pi*m*k*T)) ;
-    lambdacubed = lambda * lambda * lambda;
-    relativemu = k * T * log(lambdacubed) * density;
-    //relativemu = mu -( k * T * log(lambdacubed));
-    random = randomish();
-    if(delta < 0)
+    double delta = npe - cpe,
+           random = randomish(),
+           pi = M_PI,
+           beta = 1 / (k * system_temp),//thermodynamic beta
+           lambda = (h)/(sqrt(2*pi*particle_mass*k*system_temp)),//de broglie thermal wavelength
+           lambdacubed = lambda * lambda * lambda,
+           volume = L * L * L,
+           particle_density =  n * 1.88,
+           mu = k * system_temp * log(lambdacubed) * particle_density;//chemical potential
+    int pool = n, //size of the system BEFORE the move we are making
+        poolplus = pool + 1;//size of the system AFTER insertion of a particle
+    if(delta < 0)//always accept a move that lowers the energy
     {
         fprintf(energies,"%d %f \n", c,npe);
         fclose(energies);
@@ -315,8 +306,8 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     }
     else if(flag == 0)//if we MOVED a particle 
     {
-        probability  = exp(-1 * beta * delta);
-        if(probability > random)
+        double acceptance = exp(-1 * beta * delta);
+        if(acceptance > random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);
@@ -331,9 +322,10 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     }
     else if(flag == 1)//if we CREATED a particle
     {
-        double acceptance = -(beta*delta) + (beta*relativemu) +(log(volume/poolplus));
-        double condition = exp(acceptance);
-        if(condition > random)
+        double volume_term = volume/(lambdacubed*poolplus),
+               goes_in_exponential = beta* (mu - npe + cpe),
+               acceptance = volume_term*exp(goes_in_exponential);
+        if(acceptance> random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);
@@ -348,10 +340,10 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
     }
     else if(flag == 2)//if we DESTROYED a particle
     {
-        double oneterm = -(beta*delta)-(beta*relativemu),
-               acceptance = exp(oneterm),
-               condition = pool/ (volume * acceptance);
-        if(condition > random)
+        double volume_term = (lambdacubed*pool)/volume,
+               goes_in_exponential = -beta * (mu+delta),
+               acceptance = volume_term * exp(goes_in_exponential);
+        if(acceptance > random)
         {
             fprintf(energies,"%d %f \n", c,npe);
             fclose(energies);

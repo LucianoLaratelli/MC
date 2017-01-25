@@ -1,3 +1,10 @@
+Sun Jan 22 17:04:10 2017 -0500, trying something out
+Sun Jan 22 13:33:18 2017 -0500, quick change to main
+Sat Jan 21 17:35:46 2017 -0500, Change argv to include number of iterations to streamline use; add compiler flag -Wextra to makefile
+Sat Jan 21 16:58:20 2017 -0500, Add stats file to start to get an idea for how runtime correlates with iteration number; major change to sphere_volume that makes sure diameter is divided by two before being used as radius in calculation
+Fri Jan 20 09:24:36 2017 -0500, changes to radial distribution function
+Thu Jan 19 18:03:33 2017 -0500, add lines to output weighted/unweighted radial distribution function and add line that records number of iterations v. runtime
+Thu Jan 19 17:04:00 2017 -0500, update gitignore and some other files
 Thu Jan 19 16:56:15 2017 -0500, change randomish to seed in main make cutoff a global variable (sorry) change all random declarations to use randomish() change acceptance conditions for move_acceptor to be correct change name of histogram to accurately reflect its true nature as a radial distribution function
 Thu Jan 19 13:53:32 2017 -0500, remove compiled program
 Wed Jan 18 20:08:12 2017 -0500, add file output to histogram
@@ -34,4 +41,3 @@ Mon Nov 7 17:09:46 2016 -0500, One seg fault gone
 Sat Nov 5 23:15:53 2016 -0400, Seg fault smh
 Sat Nov 5 12:41:42 2016 -0400, updating gitignore
 Sat Nov 5 12:41:12 2016 -0400, Fleshing out the code
-Mon Oct 3 20:01:38 2016 -0400, A new project! This is for a grand-canonical mote carlo simulation; the file “vector” is for me to play around with C++ vectors
