@@ -294,7 +294,7 @@ bool move_acceptor(double cpe, double npe, int c, int flag, int n, double partic
            lambda = (h)/(sqrt(2*pi*particle_mass*k*system_temp)),//de broglie thermal wavelength
            lambdacubed = lambda * lambda * lambda,
            volume = L * L * L,
-           particle_density =  n * 1.88,
+           particle_density =  (n * 1.88)/L,
            mu = k * system_temp * log(lambdacubed) * particle_density;//chemical potential
     int pool = n, //size of the system BEFORE the move we are making
         poolplus = pool + 1;//size of the system AFTER insertion of a particle
