@@ -127,7 +127,7 @@ void particlemover(int pick)
 }
 
 
-//the topcreator adds particles to the system if it is chosen to do so by move_chooser
+//the creator adds particles to the system if it is chosen to do so by move_chooser
 //below. The coordinates of the new particle are random based on the length 
 //of the box
 void thecreator()
@@ -274,7 +274,7 @@ double pecalc(double sigma, double epsilon)//returns energy in Kelvin
             r12 = r6 * r6;
             sor6 = s6 * r6;
             sor12 = s12 * r12; 
-            pe += (4 * epsilon * (sor12 - sor6));
+            pe += 4 * epsilon * (sor12 - sor6);
        }
     }
     return pe;
