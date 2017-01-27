@@ -229,7 +229,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                    int n, double particle_mass, double system_temp)
 {
 	FILE * energies;
+        FILE * chemicalpotential;
 	energies = fopen("energies.dat", "a");
+        chemicalpotential = fopen("chemicalpotential.txt", "a");
         double delta = npe - cpe,
                random = randomish(),
                pi = M_PI,
@@ -243,6 +245,8 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                mu = k * system_temp * log(lambdacubed) * particle_density;
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
+        fprintf(chemicalpotential, "%d %f \n",c, mu);
+        fclose(chemicalpotential);
 	if (delta < 0)//always accept a move that lowers the energy
 	{
 		fprintf(energies, "%d %f \n", c, npe);
