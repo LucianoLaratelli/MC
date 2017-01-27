@@ -1,5 +1,7 @@
 *
 !.gitignore
-!grand.c
+!main.cpp
+!MonteCarlo.cpp
+!MonteCarlo.h
 !log.txt
 !stats.txt
