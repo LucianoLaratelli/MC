@@ -1,6 +1,7 @@
-/*************************************************************************************************************
-This is a monte carlo method simulator of the grand canonical ensemble, also known as the "mu-V-T" ensemble.
-This program takes a system composed of any number of particles and does one of three moves on it:
+/*******************************************************************************
+This is a monte carlo method simulator of the grand canonical ensemble,
+also known as the "mu-V-T" ensemble.  This program takes a system composed of
+any number of particles and does one of three moves on it:
 
 1. moves a random particle a random distance
 2. adds a particle at a random positions
@@ -11,7 +12,7 @@ and the standard deviation associated with the average
 the energies (in the same manner as the number of particles)
 the chemical potential (per frame)
 a calculated QST per-frame and as an average over all frames
-**************************************************************************************************************/
+*******************************************************************************/
 
 #include "MonteCarlo.h"
 
@@ -35,7 +36,10 @@ int main(int argc, char *argv[])
 
 	if (argc != 7)
 	{
-		printf("This program takes five arguments: the type of particle, its mass, a LJ sigma, LJ epsilon,the temperature of the system, and the number of desired iterations, in that order.");
+		printf("This program takes five arguments: the type of\
+                        particle, its mass, a LJ sigma, LJ epsilon,the\
+                        temperature of the system, and the number of\
+                        desired iterations, in that order.");
 		exit(EXIT_FAILURE);
 	}
 	sscanf(argv[1], "%s", particle_type);
@@ -68,24 +72,25 @@ int main(int argc, char *argv[])
 
 
 
-	currentPE = calculate_PE(&sys);//we find the starting potential and call it our "current" one
+	currentPE = calculate_PE(&sys);
 	fprintf(energies, "0 %f\n", currentPE);
 	fclose(energies);
 
 	clock_t begin = clock();
 	n = sys.particles.size();  // get particle count
-	sumenergy = currentPE;//the sum has to include the initial starting energy
+	sumenergy = currentPE;//the sum has to include initial starting energy
 	sumparticles = n;
 
 	//printf("Starting run now\n");
 	for( step = 1; step<maxStep; step++)
 	{
+		//first step of the monte carlo algorithm
+		move_type = make_move(&sys); 
 		
-		move_type = make_move(&sys); //first step of the monte carlo, also stores which move we did in case we need to undo it
-		
-		newPE = calculate_PE(&sys);//"new potential energy" in K
+		newPE = calculate_PE(&sys);
 
-		if( move_accepted(currentPE, newPE, step, move_type, n, particle_mass, system_temp))
+		if( move_accepted(currentPE, newPE, step,\
+                            move_type, n, particle_mass, system_temp))
 		{
 			n = sys.particles.size();
 			output(&sys, particle_type);
@@ -97,9 +102,9 @@ int main(int argc, char *argv[])
 		else // Move rejected
 		{
 			n = sys.particles.size();
-			undo_move(&sys, move_type);//uses the flag to undo a move if necessary
+			undo_move(&sys, move_type);
 			output(&sys, particle_type);
-			sumenergy += currentPE;//adds the old energy to the average
+			sumenergy += currentPE;
 			sumparticles += n;
 			qst_calc(sumparticles, sumenergy, step, system_temp);
 		}
@@ -109,7 +114,8 @@ int main(int argc, char *argv[])
 	clock_t end = clock();
 	double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	
 	fclose(stats);
-	printf("Done! This run took %f seconds. Have a nice day!\n", time_spent);
+	printf("Done! This run took %f seconds.\
+                Have a nice day!\n", time_spent);
 	return 0;
 }
 

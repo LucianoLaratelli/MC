@@ -1,9 +1,8 @@
 #include "MonteCarlo.h"
 
 
-// positionchecker imposes periodic boundary conditions on a particle N by its id.  
-// if any particle tries to escape the box, it disappears and is replaced on the 
-// opposite side of the box by a more obedient particle
+// if any particle tries to escape the box, it disappears
+// and is replaced on the opposite side of the box by a more obedient particle
 bool positionchecker(GCMC_System *sys, int particleID )
 {
 	for (int i = 0; i<3; i++)
@@ -30,7 +29,7 @@ double randomish()
 	return r / ((double)RAND_MAX + 1);
 }
 
-void particleunmover( GCMC_System *sys )
+void unmove_particle( GCMC_System *sys )
 {
 	int pick = sys->move.pick;
 	double phi = sys->move.phi,
@@ -46,16 +45,14 @@ void particleunmover( GCMC_System *sys )
 void move_particle(GCMC_System *sys, int pick)
 {
 	//phi,gamma, and delta are random floats between 0 and L
-	//now we use a "bool counter" to make sure we don't move a particle
-	//out of the box. Not sure how well this will work but oh well
 	bool i = false;
 	while( !i )
 	{
 		double phi = (randomish())*L,
 			gamma = (randomish())*L,
 			delta = (randomish())*L;
-		//these next few lines store our moves in a struct in case they suck and we
-		//need to undo the move
+		//these next few lines store our moves in a struct case
+                //we need to undo the move
 		sys->move.pick = pick;
 		sys->move.phi = phi;
 		sys->move.gamma = gamma;
@@ -64,21 +61,17 @@ void move_particle(GCMC_System *sys, int pick)
 		sys->particles[pick].x[0] += phi;
 		sys->particles[pick].x[1] += gamma;
 		sys->particles[pick].x[2] += delta;
-		//lastly, we check that the particle hasn't moved out of the box with 
-		//positionchecker
+		//lastly, we check that the particle hasn't moved out of the box 
 		i = positionchecker(sys, pick);
 		if(i == false)
 		{
-			particleunmover(sys);
+			unmove_particle(sys);
 		}
 	}
 	return;
 }
 
 
-//the creator adds particles to the system if it is chosen to do so by move_chooser
-//below. The coordinates of the new particle are random based on the length 
-//of the box
 void create_particle( GCMC_System *sys)
 {
 	particle added; //making a struct to push_back to the vector
@@ -89,9 +82,11 @@ void create_particle( GCMC_System *sys)
 	sys->creator.gamma = added.x[1];
 	sys->creator.delta = added.x[2];
 	sys->particles.push_back(added);
-	sys->creator.pick = sys->particles.size() - 1; //the index number of the new particle
+        //the index number of the new particle:
+	sys->creator.pick = sys->particles.size() - 1; 
 	return;
 }
+
 
 void destroy_particle(GCMC_System *sys, int pick)
 {
@@ -99,16 +94,14 @@ void destroy_particle(GCMC_System *sys, int pick)
 	sys->destroy.phi   = sys->particles[pick].x[0];
 	sys->destroy.gamma = sys->particles[pick].x[1];
 	sys->destroy.delta = sys->particles[pick].x[2];
-	sys->particles.erase(sys->particles.begin() + pick);//begin refers to the pointer of the
-	//zeroth item; 
+        //"begin" (below) points to the address of the zeroth item 
 	// we add "pick" amount of bytes 
 	// to get to the next pointer
-	return;
+	sys->particles.erase(sys->particles.begin() + pick);
+        return;
 }
 
 
-//move chooser picks a random float between 0 and three and uses it to call one of
-//three other functions, which impose the monte carlo method onto the system.
 MoveType make_move( GCMC_System *sys)
 {
 	MoveType move;
@@ -122,8 +115,8 @@ MoveType make_move( GCMC_System *sys)
 	}
 	else
 	{
-		double pick = rand() % pool,//picks random particle from those available
-			choice = randomish() * 3; //choice is a random float between 0 and 3
+		double pick = rand() % pool,//picks random particle
+			choice = randomish() * 3; //random float between 0 and 3
 		fflush(stdout);
 		if (choice<1.0)
 		{
@@ -149,7 +142,7 @@ void undo_move(GCMC_System *sys, MoveType move)
 {
 	if (move == TRANSLATE)
 	{
-		particleunmover(sys);
+		unmove_particle(sys);
 	}
 	else if (move == CREATE_PARTICLE)
 	{
@@ -229,24 +222,27 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 	return pe;
 }
 
-/*********************************************************************************************************
-* move_acceptor accepts or rejects a move based on page 130 of UMS by Frenkel and Smit.                 *
-*********************************************************************************************************/
-bool move_accepted(double cpe, double npe, int c, MoveType move_type, int n, double particle_mass, double system_temp)
+/*******************************************************************************
+* based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
+*******************************************************************************/
+bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
+                   int n, double particle_mass, double system_temp)
 {
 	FILE * energies;
 	energies = fopen("energies.dat", "a");
-	double delta = npe - cpe,
-		random = randomish(),
-		pi = M_PI,
-		beta = 1 / (k * system_temp),//thermodynamic beta
-		lambda = (h) / (sqrt(2 * pi*particle_mass*k*system_temp)),//de broglie thermal wavelength
-		lambdacubed = lambda * lambda * lambda,
-		volume = L * L * L,
-		particle_density = n / L, //  (n * 1.88) / L,
-		mu = k * system_temp * log(lambdacubed) * particle_density;//chemical potential
+        double delta = npe - cpe,
+               random = randomish(),
+               pi = M_PI,
+               beta = 1 / (k * system_temp),//thermodynamic beta
+               // lambda is the de broglie thermal wavelength
+               lambda = (h) / (sqrt(2 * pi*particle_mass*k*system_temp)),
+               lambdacubed = lambda * lambda * lambda,
+               volume = L * L * L,
+               particle_density = n / L, //  (n * 1.88) / L,
+               //mu is the chemical potential, NEEDS FIX
+               mu = k * system_temp * log(lambdacubed) * particle_density;
 	int pool = n, //size of the system BEFORE the move we are making
-		poolplus = pool + 1;//size of the system AFTER insertion of a particle
+            poolplus = pool + 1;//size of the system AFTER particle insertion 
 	if (delta < 0)//always accept a move that lowers the energy
 	{
 		fprintf(energies, "%d %f \n", c, npe);
@@ -308,7 +304,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type, int n, dou
 	return true;
 }
 
-double qst_calc(int N, double energy, int c, double system_temp)//sorry
+double qst_calc(int N, double energy, int c, double system_temp)
 {
 	FILE * qsts;
 	qsts = fopen("qsts.dat", "a");
@@ -320,7 +316,8 @@ double qst_calc(int N, double energy, int c, double system_temp)//sorry
 		average_of_N_squared = N_squared * N_squared,//<N^2>
 		particles_by_energy = average_N * average_energy,
 		average_of_particles_by_energy = particles_by_energy / c, //<NU>
-		numerator = (average_of_particles_by_energy)-(average_N * average_energy),
+		numerator = (average_of_particles_by_energy)-\
+                            (average_N * average_energy),
 		denominator = average_of_N_squared - average_N_all_squared,
 		QST = k * T - (numerator / denominator);
 	fprintf(qsts, "%d %lf\n", c, QST);
@@ -334,8 +331,6 @@ double sphere_volume(double diameter)
 	return 4.0 / 3.0 * M_PI * radius * radius * radius;
 }
 
-//radialdistribution computes the radial distribution function for
-//the system at its last frame
 void radialDistribution(GCMC_System *sys, int n)
 {
 	FILE * weightedradial;
@@ -370,7 +365,8 @@ void radialDistribution(GCMC_System *sys, int n)
 	{
 		fprintf(unweightedradial, "%lf\n", boxes[I - 1]);
 		current_shell = I;
-		shell_volume_delta = (sphere_volume(current_shell) - sphere_volume(previous_shell));
+		shell_volume_delta = (sphere_volume(current_shell) -\
+                                      sphere_volume(previous_shell));
 		expected_number_of_particles = shell_volume_delta * num_density;
 		boxes[I - 1] /= expected_number_of_particles;
 		fprintf(weightedradial, "%lf\n", boxes[I - 1]);
@@ -391,7 +387,9 @@ void output(GCMC_System *sys, char *particle_type)
 	fprintf(positions, "%d \n\n", pool);
 	for (p = 0; p<pool; p++)
 	{
-		fprintf(positions, "%s %lf %lf %lf\n", particle_type, sys->particles[p].x[0], sys->particles[p].x[1], sys->particles[p].x[2]);
+		fprintf(positions, "%s %lf %lf %lf\n",\
+                        particle_type, sys->particles[p].x[0],\
+                        sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
 	fclose(positions);
 	return;

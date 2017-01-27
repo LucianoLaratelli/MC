@@ -61,7 +61,8 @@ MoveType make_move(GCMC_System *sys);
 void undo_move(GCMC_System *sys, MoveType move);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
-bool move_accepted(double cpe, double npe, int c, MoveType move_type, int n, double particle_mass, double system_temp);
+bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
+                   int n, double particle_mass, double system_temp);
 double qst_calc(int N, double energy, int c, double system_temp);
 double sphere_volume(double diameter);
 void radialDistribution( GCMC_System *sys, int n);
