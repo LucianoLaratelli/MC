@@ -118,7 +118,3 @@ int main(int argc, char *argv[])
                 Have a nice day!\n", time_spent);
 	return 0;
 }
-
-
-
-
