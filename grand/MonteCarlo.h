@@ -4,6 +4,7 @@
 #include <time.h>
 #include <random>
 #include <stdlib.h>
+#include <string.h>
 
 #ifndef MONTE_CARLO_H
 #define MONTE_CARLO_H
@@ -37,19 +38,20 @@ typedef struct _GCMC_System {
 	translational_data move;
 	creation_data creator;
 	removal_data destroy;
-	double sigma;
-	double epsilon;
+	double sigma,
+	       epsilon,
+               particle_mass;
+        double system_temp,
+               box_side_length,
+               cutoff;
+        int    maxStep;
 } GCMC_System;
 
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
-const int L = 29; //length of one side of the box
-const double cutoff = L * 0.5;
 const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10, -34);//planck constant
-
-
 
 bool positionchecker(GCMC_System *sys, int particleID);
 double randomish();
@@ -62,10 +64,12 @@ void undo_move(GCMC_System *sys, MoveType move);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
 bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
-                   int n, double particle_mass, double system_temp);
+                   int n, GCMC_System *sys);
 double qst_calc(int N, double energy, int c, double system_temp);
 double sphere_volume(double diameter);
 void radialDistribution( GCMC_System *sys, int n);
+void input(GCMC_System *sys, char *particle_type);
 void output(GCMC_System *sys, char *particle_type);
+
 
 #endif

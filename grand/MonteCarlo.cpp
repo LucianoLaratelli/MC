@@ -1,20 +1,20 @@
 #include "MonteCarlo.h"
 
-
 // if any particle tries to escape the box, it disappears
-// and is replaced on the opposite side of the box by a more obedient particle
+// and is replaced on the opposite side of the box
+// by a more obedient particle
 bool positionchecker(GCMC_System *sys, int particleID )
 {
 	for (int i = 0; i<3; i++)
 	{
-		if (sys->particles[particleID].x[i] >= L)
+		if (sys->particles[particleID].x[i] >= sys->box_side_length)
 		{
-			sys->particles[particleID].x[i] -= L;
+			sys->particles[particleID].x[i] -= sys->box_side_length;
 			return false;
 		}
 		else if (sys->particles[particleID].x[i] < 0)
 		{
-			sys->particles[particleID].x[i] += L;
+			sys->particles[particleID].x[i] += sys->box_side_length;
 			return false;
 		}
 	}
@@ -48,9 +48,9 @@ void move_particle(GCMC_System *sys, int pick)
 	bool i = false;
 	while( !i )
 	{
-		double phi = (randomish())*L,
-			gamma = (randomish())*L,
-			delta = (randomish())*L;
+		double phi = (randomish())*sys->box_side_length,
+			gamma = (randomish())*sys->box_side_length,
+			delta = (randomish())*sys->box_side_length;
 		//these next few lines store our moves in a struct case
                 //we need to undo the move
 		sys->move.pick = pick;
@@ -75,9 +75,9 @@ void move_particle(GCMC_System *sys, int pick)
 void create_particle( GCMC_System *sys)
 {
 	particle added; //making a struct to push_back to the vector
-	added.x[0] = randomish()*L;
-	added.x[1] = randomish()*L;
-	added.x[2] = randomish()*L;
+	added.x[0] = randomish()*sys->box_side_length;
+	added.x[1] = randomish()*sys->box_side_length;
+	added.x[2] = randomish()*sys->box_side_length;
 	sys->creator.phi = added.x[0];
 	sys->creator.gamma = added.x[1];
 	sys->creator.delta = added.x[2];
@@ -163,17 +163,18 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 {
 	double dist,
 		delta,
-		delta2 = 0.00;
+		delta2 = 0.00,
+                cutoff = sys->box_side_length * 0.5;
 	for (int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
 		if (delta >= cutoff)
 		{
-			delta -= L;
+			delta -= sys->box_side_length;
 		}
 		if (delta <= -cutoff)
 		{
-			delta += L;
+			delta += sys->box_side_length;
 		}
 		delta2 += delta * delta;
 	}
@@ -188,7 +189,8 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 		c,
 		pool = sys->particles.size();
 	double r,
-		pe = 0.00;
+	       pe = 0.00,
+               cutoff = sys->box_side_length * 0.5;
 	double s2,//powers of sigma
 		s6,
 		s12;
@@ -226,7 +228,7 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 * based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
 *******************************************************************************/
 bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
-                   int n, double particle_mass, double system_temp)
+                   int n, GCMC_System *sys)
 {
 	FILE * energies;
         FILE * chemicalpotential;
@@ -235,14 +237,16 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
         double delta = npe - cpe,
                random = randomish(),
                pi = M_PI,
-               beta = 1 / (k * system_temp),//thermodynamic beta
+               beta = 1 / (k * sys->system_temp),//thermodynamic beta
                // lambda is the de broglie thermal wavelength
-               lambda = (h) / (sqrt(2 * pi*particle_mass*k*system_temp)),
+               lambda = (h) / (sqrt(2 * pi*sys->particle_mass*k*\
+                           sys->system_temp)),
                lambdacubed = lambda * lambda * lambda,
-               volume = L * L * L,
-               particle_density = n / L, //  (n * 1.88) / L,
+               volume = sys->box_side_length * sys->box_side_length *\
+                        sys->box_side_length,
+               particle_density = n / sys->box_side_length, //  (n * 1.88) / L,
                //mu is the chemical potential, NEEDS FIX
-               mu = k * system_temp * log(lambdacubed) * particle_density;
+               mu = k * sys->system_temp * log(lambdacubed) * particle_density;
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         fprintf(chemicalpotential, "%d %f \n",c, mu);
@@ -341,15 +345,17 @@ void radialDistribution(GCMC_System *sys, int n)
 	FILE * unweightedradial;
 	unweightedradial = fopen("unweightedradialdistribution.txt", "a");
 	weightedradial = fopen("weightedradialdistribution.txt", "a");
-	const int nBins = (L / 2 + 1) * 10; //total number of bins
-	double BinSize = L / (2.0 * (double)nBins),
-		num_density = (double)n / (double)(L*L*L),
+	const int nBins = (sys->box_side_length / 2 + 1) * 10; //total number of bins
+	double BinSize = sys->box_side_length / (2.0 * (double)nBins),
+		num_density = (double)n / (double)(sys->box_side_length*\
+                                sys->box_side_length*sys->box_side_length),
 		expected_number_of_particles,
 		boxes[nBins] = { 0 },
 		current_shell,
 		previous_shell,
 		shell_volume_delta,
-		dist;
+		dist,
+                cutoff = sys->box_side_length * 0.5;
 	int IK;
 	for (int I = 0; I<n - 1; I++)
 	{
@@ -380,6 +386,57 @@ void radialDistribution(GCMC_System *sys, int n)
 	fclose(weightedradial);
 	return;
 }
+
+/*******************************************************************************
+ * input reads in the particle type and stores its corresponding mass (AMU),
+ * LJ epsilon (K), and LJ sigma(angstroms) in the system struct
+ * ****************************************************************************/
+void input(GCMC_System *sys, char *particle_type)
+{
+   char argon[] = "Ar",
+        helium[] = "He",
+        neon[] = "Ne",
+        krypton[] = "Kr",
+        xenon[] = "Xe";
+   if(strcmp(particle_type,argon) == 0)
+   {
+       sys->sigma = 3.371914;
+       sys->epsilon = 128.326802;
+       sys->particle_mass = 39.948;
+   }
+   else if(strcmp(particle_type,helium) == 0)
+   {
+       sys->sigma = 2.653089;
+       sys->epsilon = 9.071224;
+       sys->particle_mass = 4.0026;
+   }
+   else if(strcmp(particle_type,neon) == 0)
+   {
+       sys->sigma = 2.785823;
+       sys->epsilon = 36.824138;
+       sys->particle_mass = 20.1797;
+   }
+   else if(strcmp(particle_type,krypton) == 0)
+   {
+       sys->sigma = 3.601271;
+       sys->epsilon = 183.795833;
+       sys->particle_mass = 83.798;
+   }
+   else if(strcmp(particle_type,xenon) == 0)
+   {
+       sys->sigma = 3.956802;
+       sys->epsilon = 237.985247;
+       sys->particle_mass = 131.293;
+   }
+   else
+   {
+       printf("Not a supported chemical species! Allowed values are Ar, Ne, He,\
+               Kr, and Xe. Please try again!\n");
+       exit(EXIT_FAILURE);
+   }
+   return;
+}     
+
 
 void output(GCMC_System *sys, char *particle_type)
 {
