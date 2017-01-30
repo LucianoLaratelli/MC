@@ -7,14 +7,14 @@ bool positionchecker(GCMC_System *sys, int particleID )
 {
 	for (int i = 0; i<3; i++)
 	{
-		if (sys->particles[particleID].x[i] >= sys->box_side_length)
+		if (sys->particles[particleID].x[i] >= box_side_length)
 		{
-			sys->particles[particleID].x[i] -= sys->box_side_length;
+			sys->particles[particleID].x[i] -= box_side_length;
 			return false;
 		}
 		else if (sys->particles[particleID].x[i] < 0)
 		{
-			sys->particles[particleID].x[i] += sys->box_side_length;
+			sys->particles[particleID].x[i] += box_side_length;
 			return false;
 		}
 	}
@@ -48,9 +48,9 @@ void move_particle(GCMC_System *sys, int pick)
 	bool i = false;
 	while( !i )
 	{
-		double phi = (randomish())*sys->box_side_length,
-			gamma = (randomish())*sys->box_side_length,
-			delta = (randomish())*sys->box_side_length;
+		double phi = (randomish())* box_side_length,
+			gamma = (randomish())*box_side_length,
+			delta = (randomish())*box_side_length;
 		//these next few lines store our moves in a struct case
                 //we need to undo the move
 		sys->move.pick = pick;
@@ -75,9 +75,9 @@ void move_particle(GCMC_System *sys, int pick)
 void create_particle( GCMC_System *sys)
 {
 	particle added; //making a struct to push_back to the vector
-	added.x[0] = randomish()*sys->box_side_length;
-	added.x[1] = randomish()*sys->box_side_length;
-	added.x[2] = randomish()*sys->box_side_length;
+	added.x[0] = randomish()*box_side_length;
+	added.x[1] = randomish()*box_side_length;
+	added.x[2] = randomish()*box_side_length;
 	sys->creator.phi = added.x[0];
 	sys->creator.gamma = added.x[1];
 	sys->creator.delta = added.x[2];
@@ -164,17 +164,17 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 	double dist,
 		delta,
 		delta2 = 0.00,
-                cutoff = sys->box_side_length * 0.5;
+                cutoff = box_side_length * 0.5;
 	for (int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
 		if (delta >= cutoff)
 		{
-			delta -= sys->box_side_length;
+			delta -= box_side_length;
 		}
 		if (delta <= -cutoff)
 		{
-			delta += sys->box_side_length;
+			delta += box_side_length;
 		}
 		delta2 += delta * delta;
 	}
@@ -190,7 +190,7 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 		pool = sys->particles.size();
 	double r,
 	       pe = 0.00,
-               cutoff = sys->box_side_length * 0.5;
+               cutoff = box_side_length * 0.5;
 	double s2,//powers of sigma
 		s6,
 		s12;
@@ -242,9 +242,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                lambda = (h) / (sqrt(2 * pi*sys->particle_mass*k*\
                            sys->system_temp)),
                lambdacubed = lambda * lambda * lambda,
-               volume = sys->box_side_length * sys->box_side_length *\
-                        sys->box_side_length,
-               particle_density = n / sys->box_side_length, //  (n * 1.88) / L,
+               volume = box_side_length * box_side_length *\
+                        box_side_length,
+               particle_density = n / box_side_length, //  (n * 1.88) / L,
                //mu is the chemical potential, NEEDS FIX
                mu = k * sys->system_temp * log(lambdacubed) * particle_density;
 	int pool = n, //size of the system BEFORE the move we are making
@@ -345,12 +345,12 @@ void radialDistribution(GCMC_System *sys, int n)
 	FILE * unweightedradial;
 	unweightedradial = fopen("unweightedradialdistribution.txt", "a");
 	weightedradial = fopen("weightedradialdistribution.txt", "a");
-	const int nBins = (sys->box_side_length / 2 + 1) * 10; //total number of bins
-	double BinSize = sys->box_side_length / (2.0 * (double)nBins),
-		num_density = (double)n / (double)(sys->box_side_length*\
-                                sys->box_side_length*sys->box_side_length),
+	const int nBins = (box_side_length / 2 + 1) * 10; //total number of bins
+	double BinSize = box_side_length / (2.0 * (double)nBins),
+		num_density = (double)n / (double)(box_side_length* \
+                               box_side_length*box_side_length),
 		expected_number_of_particles,
-		boxes[nBins] = { 0 },
+		boxes[nBins] = {0},
 		current_shell,
 		previous_shell,
 		shell_volume_delta,
@@ -398,6 +398,7 @@ void input(GCMC_System *sys, char *particle_type)
         neon[] = "Ne",
         krypton[] = "Kr",
         xenon[] = "Xe";
+
    if(strcmp(particle_type,argon) == 0)
    {
        sys->sigma = 3.371914;

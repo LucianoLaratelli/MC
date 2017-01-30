@@ -33,18 +33,16 @@ int main(int argc, char *argv[])
            sumenergy,
            sumparticles;
 
-    if (argc != 5)
+    if (argc != 4)
     {
-            printf("This program takes four arguments: the type of"\
+            printf("This program takes three arguments: the type of "\
                     "particle, the desired number of iterations,"\
-                    "the desired temperature,"\
-                    "and the length of one side of the box, in that order.\n");
+                    " and the desired temperature, in that order.\n");
             exit(EXIT_FAILURE);
     }
     sscanf(argv[1], "%s", particle_type);
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
-    sscanf(argv[4], "%lf", &sys.box_side_length);
 
     input(&sys, particle_type);
 

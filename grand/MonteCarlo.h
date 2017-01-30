@@ -15,6 +15,7 @@ typedef struct particle_particle
 	double x[3];
 } particle;
 
+
 typedef struct _translational_data
 {
 	int pick;
@@ -50,6 +51,7 @@ typedef struct _GCMC_System {
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
+const int box_side_length = 22;
 const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10, -34);//planck constant
 
