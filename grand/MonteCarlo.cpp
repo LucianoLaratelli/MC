@@ -255,7 +255,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                // lambda is the de broglie thermal wavelength
                lambda = (h) / (sqrt(2 * pi*sys->particle_mass*k*\
                            sys->system_temp)),
-               lambdacubed = lambda * lambda * lambda,
+               lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length,
                particle_density = n / box_side_length, 
@@ -412,7 +412,8 @@ void input(GCMC_System *sys, char *particle_type)
         helium[] = "He",
         neon[] = "Ne",
         krypton[] = "Kr",
-        xenon[] = "Xe";
+        xenon[] = "Xe",
+        water[] = "Water";
    if(strcmp(particle_type,argon) == 0)
    {
        sys->sigma = 3.371914;
@@ -443,6 +444,13 @@ void input(GCMC_System *sys, char *particle_type)
        sys->epsilon = 237.985247;
        sys->particle_mass = 131.293;
    }
+   //water is for Stockmeyer fluids only
+   else if(strcmp(particle_type,water) == 0)
+   {
+       sys->sigma = 3.15100;
+       sys->epsilon = 76.42000;
+       sys->particle_mass = 18.016;
+   }
    else
    {
        printf("Not a supported chemical species! Allowed values are Ar, Ne,"
@@ -455,10 +463,16 @@ void input(GCMC_System *sys, char *particle_type)
 
 void output(GCMC_System *sys, char *particle_type)
 {
+        char water[] = "Water";
+        if(strcmp(particle_type,water)==0)
+        {
+            strcpy(particle_type,water);
+        }
+        printf("%s\n",particle_type);
 	FILE * positions;
 	positions = fopen("positions.xyz", "a");
 	int p,
-		pool;
+            pool;
 	pool = sys->particles.size();
 	fprintf(positions, "%d \n\n", pool);
 	for (p = 0; p<pool; p++)
