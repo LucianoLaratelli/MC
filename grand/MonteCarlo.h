@@ -43,7 +43,6 @@ typedef struct _GCMC_System {
 	       epsilon,
                particle_mass;
         double system_temp,
-               box_side_length,
                cutoff;
         int    maxStep;
 } GCMC_System;

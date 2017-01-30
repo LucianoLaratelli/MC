@@ -16,7 +16,6 @@ a calculated QST per-frame and as an average over all frames
 
 #include "MonteCarlo.h"
 
-
 int main(int argc, char *argv[])
 {
     //sys holds variables related to the system:
@@ -100,7 +99,6 @@ int main(int argc, char *argv[])
                     qst_calc(sumparticles, sumenergy, step, sys.system_temp);
             }
     }
-
     radialDistribution(&sys, n);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	

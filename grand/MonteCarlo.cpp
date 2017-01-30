@@ -355,7 +355,7 @@ void radialDistribution(GCMC_System *sys, int n)
 		previous_shell,
 		shell_volume_delta,
 		dist,
-                cutoff = sys->box_side_length * 0.5;
+                cutoff = box_side_length * 0.5;
 	int IK;
 	for (int I = 0; I<n - 1; I++)
 	{
@@ -398,7 +398,6 @@ void input(GCMC_System *sys, char *particle_type)
         neon[] = "Ne",
         krypton[] = "Kr",
         xenon[] = "Xe";
-
    if(strcmp(particle_type,argon) == 0)
    {
        sys->sigma = 3.371914;
@@ -431,8 +430,8 @@ void input(GCMC_System *sys, char *particle_type)
    }
    else
    {
-       printf("Not a supported chemical species! Allowed values are Ar, Ne, He,\
-               Kr, and Xe. Please try again!\n");
+       printf("Not a supported chemical species! Allowed values are Ar, Ne,"
+              "He, Kr, and Xe. Please try again!\n");
        exit(EXIT_FAILURE);
    }
    return;
