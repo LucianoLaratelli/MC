@@ -22,14 +22,15 @@ bool positionchecker(GCMC_System *sys, int particleID )
 }
 
 
-//randomish returns a random float between 0 and 1
+//returns a random float between 0 and 1
 double randomish()
 {
 	double r = rand();
 	return r / ((double)RAND_MAX + 1);
 }
 
-void unmove_particle( GCMC_System *sys )
+//undoes a rejected displacement
+void unmove_particle(GCMC_System *sys )
 {
 	int pick = sys->move.pick;
 	double phi = sys->move.phi,
@@ -41,27 +42,26 @@ void unmove_particle( GCMC_System *sys )
 	return;
 }
 
-//particlemover moves a random particle a random distance
+//moves a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
-	//phi,gamma, and delta are random floats between 0 and L
 	bool i = false;
 	while( !i )
 	{
+                //phi,gamma, and delta are random floats between 0 and L
 		double phi = (randomish())* box_side_length,
 			gamma = (randomish())*box_side_length,
 			delta = (randomish())*box_side_length;
-		//these next few lines store our moves in a struct case
-                //we need to undo the move
+                // store move in case it needs to be undone
 		sys->move.pick = pick;
 		sys->move.phi = phi;
 		sys->move.gamma = gamma;
 		sys->move.delta = delta;
-		//we make the moves (finally!)
+		//make the moves (finally!)
 		sys->particles[pick].x[0] += phi;
 		sys->particles[pick].x[1] += gamma;
 		sys->particles[pick].x[2] += delta;
-		//lastly, we check that the particle hasn't moved out of the box 
+		//check that the particle hasn't moved out of the box 
 		i = positionchecker(sys, pick);
 		if(i == false)
 		{
@@ -72,22 +72,24 @@ void move_particle(GCMC_System *sys, int pick)
 }
 
 
+//insert particle at random location
 void create_particle( GCMC_System *sys)
 {
 	particle added; //making a struct to push_back to the vector
 	added.x[0] = randomish()*box_side_length;
 	added.x[1] = randomish()*box_side_length;
 	added.x[2] = randomish()*box_side_length;
+        //store coordinates of inserted particle in case of rejection
 	sys->creator.phi = added.x[0];
 	sys->creator.gamma = added.x[1];
 	sys->creator.delta = added.x[2];
 	sys->particles.push_back(added);
-        //the index number of the new particle:
-	sys->creator.pick = sys->particles.size() - 1; 
+	sys->creator.pick = sys->particles.size() - 1; //index of new particle
 	return;
 }
 
 
+//particle deletion
 void destroy_particle(GCMC_System *sys, int pick)
 {
 	sys->destroy.pick = pick;
@@ -96,12 +98,13 @@ void destroy_particle(GCMC_System *sys, int pick)
 	sys->destroy.delta = sys->particles[pick].x[2];
         //"begin" (below) points to the address of the zeroth item 
 	// we add "pick" amount of bytes 
-	// to get to the next pointer
+	// to get to the address of the "pickth" item 
 	sys->particles.erase(sys->particles.begin() + pick);
         return;
 }
 
 
+//make a random move based on a random number. The more random the better!
 MoveType make_move( GCMC_System *sys)
 {
 	MoveType move;
@@ -116,14 +119,14 @@ MoveType make_move( GCMC_System *sys)
 	else
 	{
 		double pick = rand() % pool,//picks random particle
-			choice = randomish() * 3; //random float between 0 and 3
+		       choice = randomish(); //random float between 0 and 1
 		fflush(stdout);
-		if (choice<1.0)
+		if (choice<(1.0/3.0))
 		{
 			move_particle(sys, pick);
 			move = TRANSLATE;
 		}
-		else if (choice >= 2.0)
+		else if (choice >= (2.0/3.0))
 		{
 			create_particle(sys);
 			pool = sys->particles.size();
@@ -138,6 +141,7 @@ MoveType make_move( GCMC_System *sys)
 	return move;
 }
 
+//undoes rejected moves based on move types
 void undo_move(GCMC_System *sys, MoveType move)
 {
 	if (move == TRANSLATE)
@@ -159,67 +163,77 @@ void undo_move(GCMC_System *sys, MoveType move)
 	return;
 }
 
+//finds distance between every pair of particles for use in 
+//potential calculation
 double distfinder(GCMC_System *sys, int id_a, int id_b)
 {
 	double dist,
-		delta,
-		delta2 = 0.00,
-                cutoff = box_side_length * 0.5;
-	for (int i = 0; i<3; i++)
+               delta,
+               delta2 = 0.00,
+               cutoff = box_side_length * 0.5;
+        //distance is done coordinate by coordinate
+        //(remember x[0] = x position etc
+	for(int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
+                //the following conditionals are the minimum image convention
+                //that make up part of periodic boundary conditions
 		if (delta >= cutoff)
 		{
 			delta -= box_side_length;
 		}
-		if (delta <= -cutoff)
+		else if (delta <= -cutoff)
 		{
 			delta += box_side_length;
 		}
+                //distance requires sum of squares of distance in each
+                //coordinate direction
 		delta2 += delta * delta;
 	}
 	dist = sqrt(delta2);
-	//printf("%lf \n", dist);
 	return dist;
 }
 
+//calculates potential of the system
 double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 {
 	int b, //counter variables
-		c,
-		pool = sys->particles.size();
+            c,
+            pool = sys->particles.size();
 	double r,
 	       pe = 0.00,
                cutoff = box_side_length * 0.5;
-	double s2,//powers of sigma
-		s6,
-		s12;
-	double rinv,//inverse powers of distance between two particles
-		r2,
-		r6,
-		r12;
+        //powers of sigma
+	double s2,
+               s6,
+               s12;
+        //inverse powers of distance between two particles
+	double rinv,
+               rinv2,
+               rinv6,
+               rinv12;
 	double sor6,//powers of sigma over r for the potential equation
-		sor12;
+               sor12;
 	s2 = sys->sigma * sys->sigma;
 	s6 = s2 * s2 * s2;
 	s12 = s6 * s6;
 	for (b = 0; b < pool - 1; b++)
 	{
-		for (c = b + 1; c < pool; c++)
-		{
-			r = distfinder(sys, b, c);
-			if (r<cutoff)
-			{
-				continue;
-			}
-			rinv = 1 / r;
-			r2 = rinv * rinv;
-			r6 = r2 * r2 * r2;
-			r12 = r6 * r6;
-			sor6 = s6 * r6;
-			sor12 = s12 * r12;
-			pe += 4 * sys->epsilon * (sor12 - sor6);
-		}
+            for (c = b + 1; c < pool; c++)
+            {
+                r = distfinder(sys, b, c);
+                if (r<cutoff)
+                {
+                        continue;
+                }
+                rinv = 1.0 / r;
+                rinv2 = rinv * rinv;
+                rinv6 = rinv2 * rinv2 * rinv2;
+                rinv12 = rinv6 * rinv6;
+                sor6 = s6 * rinv6;
+                sor12 = s12 * rinv12;
+                pe += 4.0 * sys->epsilon * (sor12 - sor6);
+            }
 	}
 	return pe;
 }
@@ -244,14 +258,15 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                lambdacubed = lambda * lambda * lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length,
-               particle_density = n / box_side_length, //  (n * 1.88) / L,
+               particle_density = n / box_side_length, 
                //mu is the chemical potential, NEEDS FIX
                mu = k * sys->system_temp * log(lambdacubed) * particle_density;
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         fprintf(chemicalpotential, "%d %f \n",c, mu);
         fclose(chemicalpotential);
-	if (delta < 0)//always accept a move that lowers the energy
+        //always accept a move that lowers the energy:
+	if (delta < 0)
 	{
 		fprintf(energies, "%d %f \n", c, npe);
 		fclose(energies);
@@ -276,9 +291,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
 		double volume_term = volume / (lambdacubed*poolplus),
-			goes_in_exponential = beta* (mu - npe + cpe),
-			acceptance = volume_term*exp(goes_in_exponential);
-		if (acceptance> random)
+                       goes_in_exponential = beta* (mu - npe + cpe),
+                       acceptance = volume_term*exp(goes_in_exponential);
+		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
 			fclose(energies);
@@ -317,17 +332,17 @@ double qst_calc(int N, double energy, int c, double system_temp)
 	FILE * qsts;
 	qsts = fopen("qsts.dat", "a");
 	double T = system_temp,
-		average_N = N / c,//<N>
-		average_N_all_squared = average_N * average_N,//<N>^2
-		average_energy = energy / c,//<U>
-		N_squared = average_N * average_N,
-		average_of_N_squared = N_squared * N_squared,//<N^2>
-		particles_by_energy = average_N * average_energy,
-		average_of_particles_by_energy = particles_by_energy / c, //<NU>
-		numerator = (average_of_particles_by_energy)-\
-                            (average_N * average_energy),
-		denominator = average_of_N_squared - average_N_all_squared,
-		QST = k * T - (numerator / denominator);
+               average_N = N / c,//<N>
+               average_N_all_squared = average_N * average_N,//<N>^2
+               average_energy = energy / c,//<U>
+               N_squared = average_N * average_N,
+               average_of_N_squared = N_squared * N_squared,//<N^2>
+               particles_by_energy = average_N * average_energy,
+               average_of_particles_by_energy = particles_by_energy / c, //<NU>
+               numerator = (average_of_particles_by_energy)-\
+                           (average_N * average_energy),
+               denominator = average_of_N_squared - average_N_all_squared,
+               QST = k * T - (numerator / denominator);
 	fprintf(qsts, "%d %lf\n", c, QST);
 	fclose(qsts);
 	return QST;
@@ -335,8 +350,8 @@ double qst_calc(int N, double energy, int c, double system_temp)
 
 double sphere_volume(double diameter)
 {
-	double radius = diameter / 2;//this is important
-	return 4.0 / 3.0 * M_PI * radius * radius * radius;
+	double radius = diameter / 2.0;//this is important
+	return (4.0 / 3.0) * M_PI * radius * radius * radius;
 }
 
 void radialDistribution(GCMC_System *sys, int n)

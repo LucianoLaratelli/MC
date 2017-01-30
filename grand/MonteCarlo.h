@@ -56,7 +56,7 @@ const double h = 6.626 * pow(10, -34);//planck constant
 
 bool positionchecker(GCMC_System *sys, int particleID);
 double randomish();
-void particleunmover(GCMC_System *sys);
+void unmove_particle(GCMC_System *sys);
 void move_particle(GCMC_System *sys, int pick);
 void create_particle(GCMC_System *sys);
 void destroy_particle(GCMC_System *sys, int pick);

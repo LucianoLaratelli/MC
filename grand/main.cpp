@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
     sumenergy = currentPE;//the sum has to include initial starting energy
     sumparticles = n;
 
-    for( step = 1; step<sys.maxStep; step++)
+    for(step = 1; step<sys.maxStep; step++)
     {
             //first step of the monte carlo algorithm
             move_type = make_move(&sys); 
