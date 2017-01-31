@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 
     if (argc != 4)
     {
-            printf("This program takes three arguments: the type of "\
+            printf("This program takes three arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
                     " and the desired temperature, in that order.\n");
             exit(EXIT_FAILURE);

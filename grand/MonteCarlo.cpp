@@ -105,7 +105,7 @@ void destroy_particle(GCMC_System *sys, int pick)
 
 
 //make a random move based on a random number. The more random the better!
-MoveType make_move( GCMC_System *sys)
+MoveType make_move(GCMC_System *sys)
 {
 	MoveType move;
 	int pool = sys->particles.size();
@@ -453,8 +453,9 @@ void input(GCMC_System *sys, char *particle_type)
    }
    else
    {
-       printf("Not a supported chemical species! Allowed values are Ar, Ne,"
-              "He, Kr, and Xe. Please try again!\n");
+       printf("Not a supported chemical species!\nAllowed values for Lennard-"\
+               "Jones are:\nAr\nNe\nHe\nKr\nXe\nAllowed values for "\
+               "Stockmeyer are:\nWater\nPlease try again!\n");
        exit(EXIT_FAILURE);
    }
    return;
@@ -463,12 +464,12 @@ void input(GCMC_System *sys, char *particle_type)
 
 void output(GCMC_System *sys, char *particle_type)
 {
-        char water[] = "Water";
+        char water[] = "Water",
+             oxygen[] = "O";
         if(strcmp(particle_type,water)==0)
         {
-            strcpy(particle_type,water);
+            strcpy(particle_type,oxygen);
         }
-        printf("%s\n",particle_type);
 	FILE * positions;
 	positions = fopen("positions.xyz", "a");
 	int p,
