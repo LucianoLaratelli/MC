@@ -25,7 +25,7 @@ bool positionchecker(GCMC_System *sys, int particleID )
 //returns a random float between 0 and 1
 double randomish()
 {
-	double r = rand();
+	double r = random();
 	return r / ((double)RAND_MAX + 1);
 }
 
@@ -93,7 +93,7 @@ void create_particle( GCMC_System *sys)
 void destroy_particle(GCMC_System *sys, int pick)
 {
 	sys->destroy.pick = pick;
-	sys->destroy.phi   = sys->particles[pick].x[0];
+	sys->destroy.phi = sys->particles[pick].x[0];
 	sys->destroy.gamma = sys->particles[pick].x[1];
 	sys->destroy.delta = sys->particles[pick].x[2];
         //"begin" (below) points to the address of the zeroth item 
@@ -118,7 +118,7 @@ MoveType make_move(GCMC_System *sys)
 	}
 	else
 	{
-		double pick = rand() % pool,//picks random particle
+		double pick = random() % pool,//picks random particle
 		       choice = randomish(); //random float between 0 and 1
 		fflush(stdout);
 		if (choice<(1.0/3.0))
@@ -150,7 +150,7 @@ void undo_move(GCMC_System *sys, MoveType move)
 	}
 	else if (move == CREATE_PARTICLE)
 	{
-		destroy_particle( sys, sys->creator.pick);
+		destroy_particle(sys, sys->creator.pick);
 	}
 	else
 	{

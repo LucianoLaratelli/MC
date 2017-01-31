@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
 
     input(&sys, particle_type);
 
-    srand(time(NULL));
+    srandom(time(NULL));
     FILE * positions;
     FILE * energies;
     FILE * qsts;
