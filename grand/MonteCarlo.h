@@ -34,7 +34,10 @@ typedef struct _removal_data
 	double phi, gamma, delta;
 } removal_data;
 
-typedef struct _GCMC_System {
+const int box_side_length = 22;
+
+typedef struct _GCMC_System
+{
 	std::vector <particle> particles;
 	translational_data move;
 	creation_data creator;
@@ -45,13 +48,16 @@ typedef struct _GCMC_System {
         double system_temp,
                cutoff;
         int    maxStep;
+        //next three lines are for radial distribution function
+        static constexpr int nBins = (box_side_length/2 + 1)*10;
+        double BinSize = box_side_length/(2.0+(double)nBins);
+        double boxes[nBins] = {0};
 } GCMC_System;
 
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
-const int box_side_length = 22;
-const double k = 1.38065 * pow(10,-23); //boltzmann constant
+const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10, -34);//planck constant
 
 bool positionchecker(GCMC_System *sys, int particleID);

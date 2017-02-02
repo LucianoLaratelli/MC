@@ -355,18 +355,18 @@ double sphere_volume(double diameter)
 	return (4.0 / 3.0) * M_PI * radius * radius * radius;
 }
 
+//make bins system vars to get average
 void radialDistribution(GCMC_System *sys, int n)
 {
 	FILE * weightedradial;
 	FILE * unweightedradial;
 	unweightedradial = fopen("unweightedradialdistribution.txt", "a");
 	weightedradial = fopen("weightedradialdistribution.txt", "a");
-	const int nBins = (box_side_length / 2 + 1) * 10; //total number of bins
-	double BinSize = box_side_length / (2.0 * (double)nBins),
+	const int nBins = sys->nBins; //total number of bins
+	double  BinSize = sys->BinSize,
 		num_density = (double)n / (double)(box_side_length* \
                                box_side_length*box_side_length),
 		expected_number_of_particles,
-		boxes[nBins] = {0},
 		current_shell,
 		previous_shell,
 		shell_volume_delta,
@@ -381,7 +381,7 @@ void radialDistribution(GCMC_System *sys, int n)
 			if (dist < cutoff)
 			{
 				IK = int(dist / BinSize);
-				boxes[IK] += 2;
+				sys->boxes[IK] += 2;
 			}
 		}
 	}
@@ -389,13 +389,15 @@ void radialDistribution(GCMC_System *sys, int n)
 	previous_shell = 0;
 	for (int I = 1; I <= nBins; I++)
 	{
-		fprintf(unweightedradial, "%lf\n", boxes[I - 1]);
+                sys->boxes[I-1] /= sys->maxStep; 
+		fprintf(unweightedradial, "%lf\n", sys->boxes[I - 1]);
 		current_shell = I;
 		shell_volume_delta = (sphere_volume(current_shell) -\
                                       sphere_volume(previous_shell));
 		expected_number_of_particles = shell_volume_delta * num_density;
-		boxes[I - 1] /= expected_number_of_particles;
-		fprintf(weightedradial, "%lf     %lf\n",BinSize*I,boxes[I - 1]);
+		sys->boxes[I - 1] /= expected_number_of_particles;
+		fprintf(weightedradial, "%lf     %lf\n",BinSize*I,\
+                        sys->boxes[I - 1]);
 		previous_shell = current_shell;
 	}
 	fclose(unweightedradial);
