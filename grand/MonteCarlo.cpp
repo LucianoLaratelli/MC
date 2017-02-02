@@ -173,6 +173,7 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
                cutoff = box_side_length * 0.5;
         //distance is done coordinate by coordinate
         //(remember x[0] = x position etc
+
 	for(int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
@@ -485,3 +486,4 @@ void output(GCMC_System *sys, char *particle_type)
 	fclose(positions);
 	return;
 }
+

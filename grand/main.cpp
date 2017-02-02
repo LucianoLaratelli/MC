@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     GCMC_System sys;
     
     //for input
-    char particle_type[] = {0};
+    char particle_type[25] = {0};
     int step,
         n;
     MoveType move_type;

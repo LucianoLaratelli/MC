@@ -72,5 +72,4 @@ void radialDistribution( GCMC_System *sys, int n);
 void input(GCMC_System *sys, char *particle_type);
 void output(GCMC_System *sys, char *particle_type);
 
-
 #endif
