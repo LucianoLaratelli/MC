@@ -1,3 +1,8 @@
+Thu Feb 2 14:02:58 2017 -0500, Fixed the seg fault! Thank god (Dr. Space) for Brant
+Mon Jan 30 21:39:58 2017 -0500, Merge branch 'master' of github.com:pirateofitaly/MC
+Mon Jan 30 21:35:47 2017 -0500, cosmetic changes to stdout
+Mon Jan 30 21:28:13 2017 -0500, some small changes. The MacOS segfault persists and is difficult to debug. Time to bring in the big guns (Brant)
+Mon Jan 30 17:09:01 2017 -0500, add water to input() to start working towards stockmeyer
 Mon Jan 30 12:06:11 2017 -0500, some cosmetic changes, as well as fixing an error in unmove_particle where the function still had its previous name
 Sun Jan 29 22:38:20 2017 -0500, two really weird bugs going in, committing to fix later when I have a reliable GDB hookup
 Sun Jan 29 22:07:36 2017 -0500, tried to add box side length to GCMC system but that didn't work out also, a new segfault has appeared. Committing to try to use gdb on another computer
@@ -56,4 +61,3 @@ Sat Nov 5 23:15:53 2016 -0400, Seg fault smh
 Sat Nov 5 12:41:42 2016 -0400, updating gitignore
 Sat Nov 5 12:41:12 2016 -0400, Fleshing out the code
 Mon Oct 3 20:01:38 2016 -0400, A new project! This is for a grand-canonical mote carlo simulation; the file “vector” is for me to play around with C++ vectors
-Mon Oct 3 14:39:18 2016 -0400, seed!

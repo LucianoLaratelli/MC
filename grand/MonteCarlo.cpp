@@ -395,7 +395,7 @@ void radialDistribution(GCMC_System *sys, int n)
                                       sphere_volume(previous_shell));
 		expected_number_of_particles = shell_volume_delta * num_density;
 		boxes[I - 1] /= expected_number_of_particles;
-		fprintf(weightedradial, "%lf\n", boxes[I - 1]);
+		fprintf(weightedradial, "%lf     %lf\n",BinSize*I,boxes[I - 1]);
 		previous_shell = current_shell;
 	}
 	fclose(unweightedradial);

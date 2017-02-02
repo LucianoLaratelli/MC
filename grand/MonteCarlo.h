@@ -51,7 +51,7 @@ typedef struct _GCMC_System {
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
 const int box_side_length = 22;
-const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
+const double k = 1.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10, -34);//planck constant
 
 bool positionchecker(GCMC_System *sys, int particleID);
