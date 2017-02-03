@@ -46,7 +46,8 @@ typedef struct _GCMC_System
 	       epsilon,
                particle_mass;
         double system_temp,
-               cutoff;
+               cutoff,
+               chemical_potential;
         int    maxStep;
         //next three lines are for radial distribution function
         static constexpr int nBins = (box_side_length/2 + 1)*10;

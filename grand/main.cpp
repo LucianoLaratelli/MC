@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
            sumenergy,
            sumparticles;
 
-    if (argc != 4)
+    if (argc != 5)
     {
             printf("This program takes three arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
     sscanf(argv[1], "%s", particle_type);
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
+    sscanf(argv[4], "%lf", &sys.chemical_potential);
 
     input(&sys, particle_type);
 

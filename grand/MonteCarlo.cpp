@@ -261,7 +261,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                         box_side_length,
                particle_density = n / box_side_length, 
                //mu is the chemical potential, NEEDS FIX
-               mu = k * sys->system_temp * log(lambdacubed) * particle_density;
+               mu = sys->chemical_potential; 
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         fprintf(chemicalpotential, "%d %f \n",c, mu);
