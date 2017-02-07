@@ -48,19 +48,18 @@ typedef struct _GCMC_System
                particle_mass;
         //system variables
         double system_temp,
-               cutoff,
-               chemical_potential;
+               cutoff;
         int    maxStep;
         //next three lines are for radial distribution function
         static constexpr int nBins = (box_side_length/2 + 1)*10;
-        double BinSize = box_side_length/(2.0 +(double)nBins);
+        double BinSize = box_side_length/(double)nBins;
         double boxes[nBins] = {0};
 } GCMC_System;
 
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
-const double k = 1;//.38065 * pow(10,-23); //boltzmann constant
+const double k = 1.38065 * pow(10,-23); //boltzmann constant
 const double h = 6.626 * pow(10, -34);//planck constant
 
 bool positionchecker(GCMC_System *sys, int particleID);
@@ -77,7 +76,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                    int n, GCMC_System *sys);
 double qst_calc(int N, double energy, int c, double system_temp);
 double sphere_volume(double diameter);
-void radialDistribution( GCMC_System *sys, int n);
+void radialDistribution( GCMC_System *sys, int n,int step);
 void input(GCMC_System *sys, char *particle_type);
 void output(GCMC_System *sys, char *particle_type);
 

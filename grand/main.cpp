@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
            sumenergy,
            sumparticles;
 
-    if (argc != 5)
+    if (argc != 4)
     {
             printf("This program takes three arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
@@ -42,7 +42,6 @@ int main(int argc, char *argv[])
     sscanf(argv[1], "%s", particle_type);
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
-    sscanf(argv[4], "%lf", &sys.chemical_potential);
 
     input(&sys, particle_type);
 
@@ -53,6 +52,7 @@ int main(int argc, char *argv[])
     FILE * unweightedradial;
     FILE * weightedradial;
     FILE * stats;
+    FILE * chemicalpotential;
     positions = fopen("positions.xyz", "w");
     fclose(positions);
     energies = fopen("energies.dat", "w");
@@ -63,6 +63,8 @@ int main(int argc, char *argv[])
     weightedradial = fopen("weightedradialdistribution.txt", "w");
     fclose(weightedradial);
     stats = fopen("stats.txt", "a");
+    chemicalpotential = fopen("chemicalpotential.txt","w");
+    fclose(chemicalpotential);
 
     currentPE = calculate_PE(&sys);
     fprintf(energies, "0 %f\n", currentPE);
@@ -89,6 +91,7 @@ int main(int argc, char *argv[])
                     sumenergy += currentPE;//adds to the running total
                     sumparticles += n;
                     qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    radialDistribution(&sys, n,step);
             }
             else // Move rejected
             {
@@ -98,9 +101,9 @@ int main(int argc, char *argv[])
                     sumenergy += currentPE;
                     sumparticles += n;
                     qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    radialDistribution(&sys, n,step);
             }
     }
-    radialDistribution(&sys, n);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	
     fclose(stats);

@@ -224,9 +224,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length,
-               //particle_density = n / box_side_length, 
                //mu is the chemical potential, NEEDS FIX
-               mu = sys->chemical_potential; 
+               mu = -k*sys->system_temp *\
+                    log(volume*lambdacubed/sys->particles.size());
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         fprintf(chemicalpotential, "%d %f \n",c, mu);
@@ -423,7 +423,7 @@ double sphere_volume(double diameter)
 }
 
 //make bins system vars to get average
-void radialDistribution(GCMC_System *sys, int n)
+void radialDistribution(GCMC_System *sys, int n,int step)
 {
 	FILE * weightedradial;
 	FILE * unweightedradial;
@@ -452,23 +452,25 @@ void radialDistribution(GCMC_System *sys, int n)
 			}
 		}
 	}
-	printf("number of particles: %d\n", n);
 	previous_shell = 0;
-	for (int I = 1; I <= nBins; I++)
-	{
-                sys->boxes[I-1] /= sys->maxStep; 
-		fprintf(unweightedradial, "%lf\n", sys->boxes[I - 1]);
-		current_shell = I;
-		shell_volume_delta = (sphere_volume(current_shell) -\
-                                      sphere_volume(previous_shell));
-		expected_number_of_particles = shell_volume_delta * num_density;
-		sys->boxes[I - 1] /= expected_number_of_particles;
-		fprintf(weightedradial, "%lf     %lf\n",BinSize*I,\
-                        sys->boxes[I - 1]);
-		previous_shell = current_shell;
-	}
-	fclose(unweightedradial);
-	fclose(weightedradial);
+        if(step==sys->maxStep-1)
+        {
+            for (int I = 1; I <= nBins; I++)
+            {
+                    sys->boxes[I-1] /= sys->maxStep; 
+                    fprintf(unweightedradial, "%lf\n", sys->boxes[I - 1]);
+                    current_shell = I;
+                    shell_volume_delta = (sphere_volume(current_shell) -\
+                                          sphere_volume(previous_shell));
+                    expected_number_of_particles = shell_volume_delta * num_density;
+                    sys->boxes[I - 1] /= expected_number_of_particles;
+                    fprintf(weightedradial, "%lf     %lf\n",BinSize*I,\
+                            sys->boxes[I - 1]);
+                    previous_shell = current_shell;
+            }
+            fclose(unweightedradial);
+            fclose(weightedradial);
+        }
 	return;
 }
 
