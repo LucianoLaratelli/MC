@@ -1,110 +1,65 @@
 #include "MonteCarlo.h"
 
-// if any particle tries to escape the box, it disappears
-// and is replaced on the opposite side of the box
-// by a more obedient particle
-bool positionchecker(GCMC_System *sys, int particleID )
+/*******************************************************************************
+ * input reads in the particle type and stores its corresponding mass (AMU),
+ * LJ epsilon (K), and LJ sigma(angstroms) in the system struct
+ * ****************************************************************************/
+void input(GCMC_System *sys, char *particle_type)
 {
-	for (int i = 0; i<3; i++)
-	{
-		if (sys->particles[particleID].x[i] >= box_side_length)
-		{
-			sys->particles[particleID].x[i] -= box_side_length;
-			return false;
-		}
-		else if (sys->particles[particleID].x[i] < 0)
-		{
-			sys->particles[particleID].x[i] += box_side_length;
-			return false;
-		}
-	}
-	return true;
-}
+   char argon[] = "Ar",
+        helium[] = "He",
+        neon[] = "Ne",
+        krypton[] = "Kr",
+        xenon[] = "Xe",
+        water[] = "Water";
+   if(strcmp(particle_type,argon) == 0)
+   {
+       sys->sigma = 3.371914;
+       sys->epsilon = 128.326802;
+       sys->particle_mass = 39.948;
+   }
+   else if(strcmp(particle_type,helium) == 0)
+   {
+       sys->sigma = 2.653089;
+       sys->epsilon = 9.071224;
+       sys->particle_mass = 4.0026;
+   }
+   else if(strcmp(particle_type,neon) == 0)
+   {
+       sys->sigma = 2.785823;
+       sys->epsilon = 36.824138;
+       sys->particle_mass = 20.1797;
+   }
+   else if(strcmp(particle_type,krypton) == 0)
+   {
+       sys->sigma = 3.601271;
+       sys->epsilon = 183.795833;
+       sys->particle_mass = 83.798;
+   }
+   else if(strcmp(particle_type,xenon) == 0)
+   {
+       sys->sigma = 3.956802;
+       sys->epsilon = 237.985247;
+       sys->particle_mass = 131.293;
+   }
+   //water is for Stockmeyer fluids only
+   else if(strcmp(particle_type,water) == 0)
+   {
+       sys->sigma = 3.15100;
+       sys->epsilon = 76.42000;
+       sys->particle_mass = 18.016;
+   }
+   else
+   {
+       printf("Not a supported chemical species!\nAllowed values for Lennard-"\
+               "Jones are:\nAr\nNe\nHe\nKr\nXe\nAllowed values for "\
+               "Stockmeyer are:\nWater\nPlease try again!\n");
+       exit(EXIT_FAILURE);
+   }
+   return;
+}     
 
 
-//returns a random float between 0 and 1
-double randomish()
-{
-	double r = random();
-	return r / ((double)RAND_MAX + 1);
-}
-
-//undoes a rejected displacement
-void unmove_particle(GCMC_System *sys )
-{
-	int pick = sys->move.pick;
-	double phi = sys->move.phi,
-		gamma = sys->move.gamma,
-		delta = sys->move.delta;
-	sys->particles[pick].x[0] -= phi;
-	sys->particles[pick].x[1] -= gamma;
-	sys->particles[pick].x[2] -= delta;
-	return;
-}
-
-//moves a random particle a random distance
-void move_particle(GCMC_System *sys, int pick)
-{
-	bool i = false;
-	while( !i )
-	{
-                //phi,gamma, and delta are random floats between 0 and L
-		double phi = (randomish())* box_side_length,
-			gamma = (randomish())*box_side_length,
-			delta = (randomish())*box_side_length;
-                // store move in case it needs to be undone
-		sys->move.pick = pick;
-		sys->move.phi = phi;
-		sys->move.gamma = gamma;
-		sys->move.delta = delta;
-		//make the moves (finally!)
-		sys->particles[pick].x[0] += phi;
-		sys->particles[pick].x[1] += gamma;
-		sys->particles[pick].x[2] += delta;
-		//check that the particle hasn't moved out of the box 
-		i = positionchecker(sys, pick);
-		if(i == false)
-		{
-			unmove_particle(sys);
-		}
-	}
-	return;
-}
-
-
-//insert particle at random location
-void create_particle( GCMC_System *sys)
-{
-	particle added; //making a struct to push_back to the vector
-	added.x[0] = randomish()*box_side_length;
-	added.x[1] = randomish()*box_side_length;
-	added.x[2] = randomish()*box_side_length;
-        //store coordinates of inserted particle in case of rejection
-	sys->creator.phi = added.x[0];
-	sys->creator.gamma = added.x[1];
-	sys->creator.delta = added.x[2];
-	sys->particles.push_back(added);
-	sys->creator.pick = sys->particles.size() - 1; //index of new particle
-	return;
-}
-
-
-//particle deletion
-void destroy_particle(GCMC_System *sys, int pick)
-{
-	sys->destroy.pick = pick;
-	sys->destroy.phi = sys->particles[pick].x[0];
-	sys->destroy.gamma = sys->particles[pick].x[1];
-	sys->destroy.delta = sys->particles[pick].x[2];
-        //"begin" (below) points to the address of the zeroth item 
-	// we add "pick" amount of bytes 
-	// to get to the address of the "pickth" item 
-	sys->particles.erase(sys->particles.begin() + pick);
-        return;
-}
-
-
-//make a random move based on a random number. The more random the better!
 MoveType make_move(GCMC_System *sys)
 {
 	MoveType move;
@@ -141,59 +96,68 @@ MoveType make_move(GCMC_System *sys)
 	return move;
 }
 
-//undoes rejected moves based on move types
-void undo_move(GCMC_System *sys, MoveType move)
+
+//insert particle at random location
+void create_particle( GCMC_System *sys)
 {
-	if (move == TRANSLATE)
+	particle added; //making a struct to push_back to the vector
+	added.x[0] = randomish()*box_side_length;
+	added.x[1] = randomish()*box_side_length;
+	added.x[2] = randomish()*box_side_length;
+        //store coordinates of inserted particle in case of rejection
+	sys->creator.phi = added.x[0];
+	sys->creator.gamma = added.x[1];
+	sys->creator.delta = added.x[2];
+	sys->particles.push_back(added);
+	sys->creator.pick = sys->particles.size() - 1; //index of new particle
+	return;
+}
+
+
+//moves a random particle a random distance
+void move_particle(GCMC_System *sys, int pick)
+{
+	bool i = false;
+	while( !i )
 	{
-		unmove_particle(sys);
-	}
-	else if (move == CREATE_PARTICLE)
-	{
-		destroy_particle(sys, sys->creator.pick);
-	}
-	else
-	{
-		particle added;
-		added.x[0] = sys->creator.phi;
-		added.x[1] = sys->creator.gamma;
-		added.x[2] = sys->creator.delta;
-		sys->particles.push_back(added);
+                //phi,gamma, and delta are random floats between 0 and L
+		double phi = (randomish())* box_side_length,
+			gamma = (randomish())*box_side_length,
+			delta = (randomish())*box_side_length;
+                // store move in case it needs to be undone
+		sys->move.pick = pick;
+		sys->move.phi = phi;
+		sys->move.gamma = gamma;
+		sys->move.delta = delta;
+		//make the moves (finally!)
+		sys->particles[pick].x[0] += phi;
+		sys->particles[pick].x[1] += gamma;
+		sys->particles[pick].x[2] += delta;
+		//check that the particle hasn't moved out of the box 
+		i = positionchecker(sys, pick);
+		if(i == false)
+		{
+			unmove_particle(sys);
+		}
 	}
 	return;
 }
 
-//finds distance between every pair of particles for use in 
-//potential calculation
-double distfinder(GCMC_System *sys, int id_a, int id_b)
-{
-	double dist,
-               delta,
-               delta2 = 0.00,
-               cutoff = box_side_length * 0.5;
-        //distance is done coordinate by coordinate
-        //(remember x[0] = x position etc
 
-	for(int i = 0; i<3; i++)
-	{
-		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
-                //the following conditionals are the minimum image convention
-                //that make up part of periodic boundary conditions
-		if (delta >= cutoff)
-		{
-			delta -= box_side_length;
-		}
-		else if (delta <= -cutoff)
-		{
-			delta += box_side_length;
-		}
-                //distance requires sum of squares of distance in each
-                //coordinate direction
-		delta2 += delta * delta;
-	}
-	dist = sqrt(delta2);
-	return dist;
+//particle deletion
+void destroy_particle(GCMC_System *sys, int pick)
+{
+	sys->destroy.pick = pick;
+	sys->destroy.phi = sys->particles[pick].x[0];
+	sys->destroy.gamma = sys->particles[pick].x[1];
+	sys->destroy.delta = sys->particles[pick].x[2];
+        //"begin" (below) points to the address of the zeroth item 
+	// we add "pick" amount of bytes 
+	// to get to the address of the "pickth" item 
+	sys->particles.erase(sys->particles.begin() + pick);
+        return;
 }
+
 
 //calculates potential of the system
 double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
@@ -239,6 +203,7 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 	return pe;
 }
 
+
 /*******************************************************************************
 * based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
 *******************************************************************************/
@@ -259,7 +224,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length,
-               particle_density = n / box_side_length, 
+               //particle_density = n / box_side_length, 
                //mu is the chemical potential, NEEDS FIX
                mu = sys->chemical_potential; 
 	int pool = n, //size of the system BEFORE the move we are making
@@ -292,8 +257,8 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
 		double volume_term = volume / (lambdacubed*poolplus),
-                       goes_in_exponential = beta* (mu - npe + cpe),
-                       acceptance = volume_term*exp(goes_in_exponential);
+                       acceptance = volume_term*exp(-beta*delta)
+                                   *exp(beta*mu);
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -310,8 +275,8 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
 		double volume_term = (lambdacubed*pool) / volume,
-			goes_in_exponential = -beta * (mu + delta),
-			acceptance = volume_term * exp(goes_in_exponential);
+			acceptance = volume_term * exp(-beta*mu)\
+                                     *(-beta*delta);
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -327,6 +292,108 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	}
 	return true;
 }
+
+
+//undoes rejected moves based on move types
+void undo_move(GCMC_System *sys, MoveType move)
+{
+	if (move == TRANSLATE)
+	{
+		unmove_particle(sys);
+	}
+	else if (move == CREATE_PARTICLE)
+	{
+		destroy_particle(sys, sys->creator.pick);
+	}
+	else
+	{
+		particle added;
+		added.x[0] = sys->creator.phi;
+		added.x[1] = sys->creator.gamma;
+		added.x[2] = sys->creator.delta;
+		sys->particles.push_back(added);
+	}
+	return;
+}
+
+
+//undoes a rejected displacement
+void unmove_particle(GCMC_System *sys )
+{
+	int pick = sys->move.pick;
+	double phi = sys->move.phi,
+		gamma = sys->move.gamma,
+		delta = sys->move.delta;
+	sys->particles[pick].x[0] -= phi;
+	sys->particles[pick].x[1] -= gamma;
+	sys->particles[pick].x[2] -= delta;
+	return;
+}
+
+
+// if any particle tries to escape the box, it disappears
+// and is replaced on the opposite side of the box
+// by a more obedient particle
+bool positionchecker(GCMC_System *sys, int particleID )
+{
+	for (int i = 0; i<3; i++)
+	{
+		if (sys->particles[particleID].x[i] >= box_side_length)
+		{
+			sys->particles[particleID].x[i] -= box_side_length;
+			return false;
+		}
+		else if (sys->particles[particleID].x[i] < 0)
+		{
+			sys->particles[particleID].x[i] += box_side_length;
+			return false;
+		}
+	}
+	return true;
+}
+
+
+//returns a random float between 0 and 1
+double randomish()
+{
+	double r = random();
+	return r / ((double)RAND_MAX + 1);
+}
+
+
+//finds distance between every pair of particles for use in 
+//potential calculation
+double distfinder(GCMC_System *sys, int id_a, int id_b)
+{
+	double dist,
+               delta,
+               delta2 = 0.00,
+               cutoff = box_side_length * 0.5;
+        //distance is done coordinate by coordinate
+        //(remember x[0] = x position etc
+
+	for(int i = 0; i<3; i++)
+	{
+		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
+                //the following conditionals are the minimum image convention
+                //that make up part of periodic boundary conditions
+		if (delta >= cutoff)
+		{
+			delta -= box_side_length;
+		}
+		else if (delta <= -cutoff)
+		{
+			delta += box_side_length;
+		}
+                //distance requires sum of squares of distance in each
+                //coordinate direction
+		delta2 += delta * delta;
+	}
+	dist = sqrt(delta2);
+	return dist;
+}
+
+
 
 double qst_calc(int N, double energy, int c, double system_temp)
 {
@@ -405,64 +472,6 @@ void radialDistribution(GCMC_System *sys, int n)
 	return;
 }
 
-/*******************************************************************************
- * input reads in the particle type and stores its corresponding mass (AMU),
- * LJ epsilon (K), and LJ sigma(angstroms) in the system struct
- * ****************************************************************************/
-void input(GCMC_System *sys, char *particle_type)
-{
-   char argon[] = "Ar",
-        helium[] = "He",
-        neon[] = "Ne",
-        krypton[] = "Kr",
-        xenon[] = "Xe",
-        water[] = "Water";
-   if(strcmp(particle_type,argon) == 0)
-   {
-       sys->sigma = 3.371914;
-       sys->epsilon = 128.326802;
-       sys->particle_mass = 39.948;
-   }
-   else if(strcmp(particle_type,helium) == 0)
-   {
-       sys->sigma = 2.653089;
-       sys->epsilon = 9.071224;
-       sys->particle_mass = 4.0026;
-   }
-   else if(strcmp(particle_type,neon) == 0)
-   {
-       sys->sigma = 2.785823;
-       sys->epsilon = 36.824138;
-       sys->particle_mass = 20.1797;
-   }
-   else if(strcmp(particle_type,krypton) == 0)
-   {
-       sys->sigma = 3.601271;
-       sys->epsilon = 183.795833;
-       sys->particle_mass = 83.798;
-   }
-   else if(strcmp(particle_type,xenon) == 0)
-   {
-       sys->sigma = 3.956802;
-       sys->epsilon = 237.985247;
-       sys->particle_mass = 131.293;
-   }
-   //water is for Stockmeyer fluids only
-   else if(strcmp(particle_type,water) == 0)
-   {
-       sys->sigma = 3.15100;
-       sys->epsilon = 76.42000;
-       sys->particle_mass = 18.016;
-   }
-   else
-   {
-       printf("Not a supported chemical species!\nAllowed values for Lennard-"\
-               "Jones are:\nAr\nNe\nHe\nKr\nXe\nAllowed values for "\
-               "Stockmeyer are:\nWater\nPlease try again!\n");
-       exit(EXIT_FAILURE);
-   }
-   return;
-}     
 
 
 void output(GCMC_System *sys, char *particle_type)

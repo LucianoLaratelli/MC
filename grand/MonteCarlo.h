@@ -42,16 +42,18 @@ typedef struct _GCMC_System
 	translational_data move;
 	creation_data creator;
 	removal_data destroy;
+        //lennard-jones parameters
 	double sigma,
 	       epsilon,
                particle_mass;
+        //system variables
         double system_temp,
                cutoff,
                chemical_potential;
         int    maxStep;
         //next three lines are for radial distribution function
         static constexpr int nBins = (box_side_length/2 + 1)*10;
-        double BinSize = box_side_length/(2.0+(double)nBins);
+        double BinSize = box_side_length/(2.0 +(double)nBins);
         double boxes[nBins] = {0};
 } GCMC_System;
 
