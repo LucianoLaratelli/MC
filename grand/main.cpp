@@ -90,8 +90,6 @@ int main(int argc, char *argv[])
                     currentPE = newPE;//updates the current energy
                     sumenergy += currentPE;//adds to the running total
                     sumparticles += n;
-                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
-                    radialDistribution(&sys, n,step);
             }
             else // Move rejected
             {
@@ -100,9 +98,8 @@ int main(int argc, char *argv[])
                     output(&sys, particle_type);
                     sumenergy += currentPE;
                     sumparticles += n;
-                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
-                    radialDistribution(&sys, n,step);
             }
+            radialDistribution(&sys, n,step);
     }
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	

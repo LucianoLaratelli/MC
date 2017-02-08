@@ -117,29 +117,31 @@ void create_particle( GCMC_System *sys)
 //moves a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
-	bool i = false;
-	while( !i )
-	{
-                //phi,gamma, and delta are random floats between 0 and L
-		double phi = (randomish())* box_side_length,
-			gamma = (randomish())*box_side_length,
-			delta = (randomish())*box_side_length;
-                // store move in case it needs to be undone
-		sys->move.pick = pick;
-		sys->move.phi = phi;
-		sys->move.gamma = gamma;
-		sys->move.delta = delta;
-		//make the moves (finally!)
-		sys->particles[pick].x[0] += phi;
-		sys->particles[pick].x[1] += gamma;
-		sys->particles[pick].x[2] += delta;
-		//check that the particle hasn't moved out of the box 
-		i = positionchecker(sys, pick);
-		if(i == false)
-		{
-			unmove_particle(sys);
-		}
-	}
+        //phi,gamma, and delta are random floats between 0 and L
+        double phi = (randomish()-0.5)* box_side_length,
+               gamma = (randomish()-0.5)*box_side_length,
+               delta = (randomish()-0.5)*box_side_length;
+        // store move in case it needs to be undone
+        sys->move.pick = pick;
+        sys->move.phi = phi;
+        sys->move.gamma = gamma;
+        sys->move.delta = delta;
+        //make the moves (finally!)
+        sys->particles[pick].x[0] += phi;
+        sys->particles[pick].x[1] += gamma;
+        sys->particles[pick].x[2] += delta;
+        //check that the particle hasn't moved out of the box 
+        for(int I=0;I<3;I++)
+        {
+            if(sys->particles[pick].x[I] > box_side_length)
+            {
+                sys->particles[pick].x[I] -= box_side_length;
+            }
+            else if(sys->particles[pick].x[I] < 0)
+            {
+                sys->particles[pick].x[I] += box_side_length;
+            }
+        }
 	return;
 }
 
@@ -179,6 +181,7 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
                rinv12;
 	double sor6,//powers of sigma over r for the potential equation
                sor12;
+        printf("Epsilon:%lf\tSigma:%lf\n",sys->epsilon,sys->sigma);
 	s2 = sys->sigma * sys->sigma;
 	s6 = s2 * s2 * s2;
 	s12 = s6 * s6;
@@ -187,9 +190,9 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
             for (c = b + 1; c < pool; c++)
             {
                 r = distfinder(sys, b, c);
-                if (r<cutoff)
+                if (r > cutoff)
                 {
-                        continue;
+                    continue; 
                 }
                 rinv = 1.0 / r;
                 rinv2 = rinv * rinv;
@@ -217,14 +220,16 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
         double delta = npe - cpe,
                random = randomish(),
                pi = M_PI,
-               beta = 1 / (k * sys->system_temp),//thermodynamic beta
+               e = M_E,
+               beta = 1.0 / (k * sys->system_temp),//thermodynamic beta
                // lambda is the de broglie thermal wavelength
                lambda = (h) / (sqrt(2 * pi*sys->particle_mass*k*\
                            sys->system_temp)),
                lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
-                        box_side_length,
+                        box_side_length;
                //mu is the chemical potential, NEEDS FIX
+        double boltzmann_factor = pow(e,(-beta*delta)),
                mu = -k*sys->system_temp *\
                     log(volume*lambdacubed/sys->particles.size());
 	int pool = n, //size of the system BEFORE the move we are making
@@ -232,6 +237,8 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
         fprintf(chemicalpotential, "%d %f \n",c, mu);
         fclose(chemicalpotential);
         //always accept a move that lowers the energy:
+        printf("cpe = %e\tnpe= %e\n",cpe,npe);
+        printf("Beta:\t%e\tBoltzmann factor:\t%e\n",beta,boltzmann_factor);
 	if (delta < 0)
 	{
 		fprintf(energies, "%d %f \n", c, npe);
@@ -240,7 +247,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	}
 	else if (move_type == TRANSLATE )//if we MOVED a particle 
 	{
-		double acceptance = exp(-1 * beta * delta);
+		double acceptance = boltzmann_factor;
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -249,16 +256,16 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, npe);
+			fprintf(energies, "%d %f \n", c, cpe);
 			fclose(energies);
 			return false;
 		}
 	}
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
-		double volume_term = volume / (lambdacubed*poolplus),
-                       acceptance = volume_term*exp(-beta*delta)
-                                   *exp(beta*mu);
+		double volume_term = volume * 0.0073389366/(sys->system_temp \
+                        * (double)(n)),
+                       acceptance = volume_term * boltzmann_factor;
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -267,16 +274,16 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, npe);
+			fprintf(energies, "%d %f \n", c, cpe);
 			fclose(energies);
 			return false;
 		}
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
-		double volume_term = (lambdacubed*pool) / volume,
-			acceptance = volume_term * exp(-beta*mu)\
-                                     *(-beta*delta);
+                double volume_term = sys->system_temp\
+                                     *((double)(poolplus))/(volume*0.0073389366),
+                        acceptance = volume_term * boltzmann_factor;
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -285,7 +292,7 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, npe);
+			fprintf(energies, "%d %f \n", c, cpe);
 			fclose(energies);
 			return false;
 		}
@@ -318,7 +325,7 @@ void undo_move(GCMC_System *sys, MoveType move)
 
 
 //undoes a rejected displacement
-void unmove_particle(GCMC_System *sys )
+void unmove_particle(GCMC_System *sys)
 {
 	int pick = sys->move.pick;
 	double phi = sys->move.phi,
@@ -327,6 +334,18 @@ void unmove_particle(GCMC_System *sys )
 	sys->particles[pick].x[0] -= phi;
 	sys->particles[pick].x[1] -= gamma;
 	sys->particles[pick].x[2] -= delta;
+        //check the particle is in the box
+        for(int I=0;I<3;I++)
+        {
+            if(sys->particles[pick].x[I] > box_side_length)
+            {
+                sys->particles[pick].x[I] -= box_side_length;
+            }
+            else if(sys->particles[pick].x[I] < 0)
+            {
+                sys->particles[pick].x[I] += box_side_length;
+            }
+        }
 	return;
 }
 
@@ -425,10 +444,6 @@ double sphere_volume(double diameter)
 //make bins system vars to get average
 void radialDistribution(GCMC_System *sys, int n,int step)
 {
-	FILE * weightedradial;
-	FILE * unweightedradial;
-	unweightedradial = fopen("unweightedradialdistribution.txt", "a");
-	weightedradial = fopen("weightedradialdistribution.txt", "a");
 	const int nBins = sys->nBins; //total number of bins
 	double  BinSize = sys->BinSize,
 		num_density = (double)n / (double)(box_side_length* \
@@ -455,10 +470,15 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 	previous_shell = 0;
         if(step==sys->maxStep-1)
         {
+            FILE * weightedradial;
+            FILE * unweightedradial;
+            unweightedradial = fopen("unweightedradialdistribution.txt", "a");
+            weightedradial = fopen("weightedradialdistribution.txt", "a");
             for (int I = 1; I <= nBins; I++)
             {
                     sys->boxes[I-1] /= sys->maxStep; 
-                    fprintf(unweightedradial, "%lf\n", sys->boxes[I - 1]);
+                    fprintf(unweightedradial, "%lf     %lf\n",BinSize*I,\
+                            sys->boxes[I - 1]);
                     current_shell = I;
                     shell_volume_delta = (sphere_volume(current_shell) -\
                                           sphere_volume(previous_shell));
