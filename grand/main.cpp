@@ -14,8 +14,9 @@ the chemical potential (per frame)
 a calculated QST per-frame and as an average over all frames
 *******************************************************************************/
 
-#include "MonteCarlo.h"
 
+#include "MonteCarlo.h"
+clock_t begin = clock();//for timing runs
 int main(int argc, char *argv[])
 {
     //sys holds variables related to the system:
@@ -70,10 +71,11 @@ int main(int argc, char *argv[])
     fprintf(energies, "0 %f\n", currentPE);
     fclose(energies);
 
-    clock_t begin = clock();//for timing runs
     n = sys.particles.size();  // get particle count
     sumenergy = currentPE;//the sum has to include initial starting energy
     sumparticles = n;
+
+    int largest_number_of_particles = n;
 
     for(step = 1; step<sys.maxStep; step++)
     {
@@ -90,6 +92,12 @@ int main(int argc, char *argv[])
                     currentPE = newPE;//updates the current energy
                     sumenergy += currentPE;//adds to the running total
                     sumparticles += n;
+                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    radialDistribution(&sys, n,step);
+                    if(n>largest_number_of_particles)
+                    {
+                        largest_number_of_particles = n;
+                    }
             }
             else // Move rejected
             {
@@ -98,12 +106,17 @@ int main(int argc, char *argv[])
                     output(&sys, particle_type);
                     sumenergy += currentPE;
                     sumparticles += n;
+                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    radialDistribution(&sys, n,step);
+                    if(n>largest_number_of_particles)
+                    {
+                        largest_number_of_particles = n;
+                    }
             }
-            radialDistribution(&sys, n,step);
     }
+    fclose(stats);
     clock_t end = clock();
     double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	
-    fclose(stats);
     printf("Done! This run took %f seconds.\n"\
             "Have a nice day!\n", time_spent);
     return 0;

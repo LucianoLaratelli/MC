@@ -33,8 +33,7 @@ typedef struct _removal_data
 	int pick;
 	double phi, gamma, delta;
 } removal_data;
-
-const int box_side_length = 10;
+const int box_side_length = 22;
 
 typedef struct _GCMC_System
 {
@@ -51,7 +50,7 @@ typedef struct _GCMC_System
                cutoff;
         int    maxStep;
         //next three lines are for radial distribution function
-        static constexpr int nBins = (box_side_length/2 + 1)*10;
+        static constexpr int nBins = (box_side_length/2 + 1)*100;
         double BinSize = box_side_length/(double)nBins;
         double boxes[nBins] = {0};
 } GCMC_System;
@@ -59,7 +58,7 @@ typedef struct _GCMC_System
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 
-const double k = 1;//.38065e-23; //boltzmann constant
+const double k = 1.0; //boltzmann constant
 const double h = 6.626e-34;//planck constant
 
 bool positionchecker(GCMC_System *sys, int particleID);

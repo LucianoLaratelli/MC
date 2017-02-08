@@ -181,7 +181,6 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
                rinv12;
 	double sor6,//powers of sigma over r for the potential equation
                sor12;
-        printf("Epsilon:%lf\tSigma:%lf\n",sys->epsilon,sys->sigma);
 	s2 = sys->sigma * sys->sigma;
 	s6 = s2 * s2 * s2;
 	s12 = s6 * s6;
@@ -237,8 +236,6 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
         fprintf(chemicalpotential, "%d %f \n",c, mu);
         fclose(chemicalpotential);
         //always accept a move that lowers the energy:
-        printf("cpe = %e\tnpe= %e\n",cpe,npe);
-        printf("Beta:\t%e\tBoltzmann factor:\t%e\n",beta,boltzmann_factor);
 	if (delta < 0)
 	{
 		fprintf(energies, "%d %f \n", c, npe);
@@ -263,9 +260,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	}
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
-		double volume_term = volume * 0.0073389366/(sys->system_temp \
+		double volume_term = volume /(sys->system_temp*k \
                         * (double)(n)),
-                       acceptance = volume_term * boltzmann_factor;
+                       acceptance = volume_term * boltzmann_factor*0.0073389366;
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
@@ -281,9 +278,9 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
-                double volume_term = sys->system_temp\
-                                     *((double)(poolplus))/(volume*0.0073389366),
-                        acceptance = volume_term * boltzmann_factor;
+                double volume_term = sys->system_temp*k\
+                                     *((double)(poolplus))/(volume),
+                        acceptance = volume_term * boltzmann_factor/.0073389366;
 		if (acceptance > random)
 		{
 			fprintf(energies, "%d %f \n", c, npe);
