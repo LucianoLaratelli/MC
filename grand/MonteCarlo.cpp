@@ -169,21 +169,13 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
             pool = sys->particles.size();
 	double r,
 	       pe = 0.00,
-               cutoff = box_side_length * 0.5;
-        //powers of sigma
-	double s2,
-               s6,
-               s12;
-        //inverse powers of distance between two particles
-	double rinv,
-               rinv2,
-               rinv6,
-               rinv12;
+               cutoff = box_side_length * 0.5,
+               rinv;
 	double sor6,//powers of sigma over r for the potential equation
                sor12;
-	s2 = sys->sigma * sys->sigma;
-	s6 = s2 * s2 * s2;
-	s12 = s6 * s6;
+	double sigma = sys->sigma,
+               epsilon = sys->epsilon;
+
 	for (b = 0; b < pool - 1; b++)
 	{
             for (c = b + 1; c < pool; c++)
@@ -194,12 +186,9 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
                     continue; 
                 }
                 rinv = 1.0 / r;
-                rinv2 = rinv * rinv;
-                rinv6 = rinv2 * rinv2 * rinv2;
-                rinv12 = rinv6 * rinv6;
-                sor6 = s6 * rinv6;
-                sor12 = s12 * rinv12;
-                pe += 4.0 * sys->epsilon * (sor12 - sor6);
+                sor12 = pow(sigma,12)*pow(rinv,12); 
+                sor6 = pow(sigma,6)*pow(rinv,6); 
+                pe += 4.0 * epsilon * (sor12 - sor6);
             }
 	}
 	return pe;
@@ -506,6 +495,10 @@ void output(GCMC_System *sys, char *particle_type)
 	int p,
             pool;
 	pool = sys->particles.size();
+        if(pool==0)
+        {
+            return;
+        }
 	fprintf(positions, "%d \n\n", pool);
 	for (p = 0; p<pool; p++)
 	{

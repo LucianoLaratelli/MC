@@ -16,7 +16,9 @@ a calculated QST per-frame and as an average over all frames
 
 
 #include "MonteCarlo.h"
+
 clock_t begin = clock();//for timing runs
+
 int main(int argc, char *argv[])
 {
     //sys holds variables related to the system:

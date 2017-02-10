@@ -57,7 +57,6 @@ typedef struct _GCMC_System
 
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
-
 const double k = 1.0; //boltzmann constant
 const double h = 6.626e-34;//planck constant
 
