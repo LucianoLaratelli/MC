@@ -464,6 +464,11 @@ void output(GCMC_System *sys, double accepted_energy, int step)
 	positions = fopen("positions.xyz", "a");
         FILE * energies;
         energies = fopen("energies.dat", "a");
+        if(energies == NULL || positions==NULL)
+        {
+            printf("File pointers in output are null!\n");
+            exit(EXIT_FAILURE);
+        }
 	int p,
             pool;
 	pool = sys->particles.size();
