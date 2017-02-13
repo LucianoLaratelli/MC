@@ -37,6 +37,11 @@ const int box_side_length = 22;
 
 typedef struct _GCMC_System
 {
+        FILE * positions;
+        FILE * energies;
+        FILE * unweightedradial;
+        FILE * weightedradial;
+        FILE * chemicalpotential;
 	std::vector <particle> particles;
 	translational_data move;
 	creation_data creator;

@@ -47,24 +47,14 @@ int main(int argc, char *argv[])
     input(&sys);
 
     srandom(1);//time(NULL));
-    FILE * positions;
-    positions = fopen("positions.xyz", "w");
-    fclose(positions);
-    FILE * energies;
-    energies = fopen("energies.dat", "w");//we'll close this later
-    FILE * unweightedradial;
-    unweightedradial = fopen("unweightedradialdistribution.txt", "w");
-    fclose(unweightedradial);
-    FILE * weightedradial;
-    weightedradial = fopen("weightedradialdistribution.txt", "w");
-    fclose(weightedradial);
-    FILE * chemicalpotential;
-    chemicalpotential = fopen("chemicalpotential.txt","w");
-    fclose(chemicalpotential);
+    sys.positions = fopen("positions.xyz", "w");
+    sys.energies = fopen("energies.dat", "w");//we'll close this later
+    sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
+    sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
+    sys.chemicalpotential = fopen("chemicalpotential.txt","w");
 
     currentPE = calculate_PE(&sys);
-    fprintf(energies, "0 %lf\n", currentPE);
-    fclose(energies);
+    fprintf(sys.energies, "0 %lf\n", currentPE);
 
     n = sys.particles.size();  // get particle count
     sumenergy = currentPE;//the sum has to include initial starting energy
@@ -114,5 +104,10 @@ int main(int argc, char *argv[])
             }
     }
     printf("Run complete! Have a nice day.\n");
+    fclose(sys.positions);
+    fclose(sys.energies);
+    fclose(sys.unweightedradial);
+    fclose(sys.weightedradial);
+    fclose(sys.chemicalpotential);
     return 0;
 }

@@ -436,23 +436,18 @@ void radialDistribution(GCMC_System *sys, int n,int step)
         {
             for (int I = 1; I <= nBins; I++)
             {
-                    FILE * weightedradial;
-                    FILE * unweightedradial;
-                    unweightedradial = fopen("unweightedradialdistribution.txt", "a");
-                    weightedradial = fopen("weightedradialdistribution.txt", "a");
                     sys->boxes[I-1] /= sys->maxStep; 
-                    fprintf(unweightedradial, "%lf     %lf\n",BinSize*I,\
+                    fprintf(sys->unweightedradial, "%lf     %lf\n",BinSize*I,\
                             sys->boxes[I - 1]);
                     current_shell = I;
                     shell_volume_delta = (sphere_volume(current_shell) -\
                                           sphere_volume(previous_shell));
                     expected_number_of_particles = shell_volume_delta * num_density;
                     sys->boxes[I - 1] /= expected_number_of_particles;
-                    fprintf(weightedradial, "%lf     %lf\n",BinSize*I,\
+                    fprintf(sys->weightedradial, "%lf     %lf\n",BinSize*I,\
+                            
                             sys->boxes[I - 1]);
                     previous_shell = current_shell;
-                    fclose(unweightedradial);
-                    fclose(weightedradial);
             }
         }
 	return;
@@ -460,11 +455,7 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
-	FILE * positions;
-	positions = fopen("positions.xyz", "a");
-        FILE * energies;
-        energies = fopen("energies.dat", "a");
-        if(energies == NULL || positions==NULL)
+        if(sys->energies == NULL || sys->positions==NULL)
         {
             printf("File pointers in output are null!\n");
             exit(EXIT_FAILURE);
@@ -482,16 +473,14 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         {
             return;
         }
-	fprintf(positions, "%d \n\n", pool);
+	fprintf(sys->positions, "%d \n\n", pool);
 	for (p = 0; p<pool; p++)
 	{
-		fprintf(positions, "%s %lf %lf %lf\n",\
+		fprintf(sys->positions, "%s %lf %lf %lf\n",\
                         sys->particle_type, sys->particles[p].x[0],\
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
-        fprintf(energies, "%d %lf\n",step,accepted_energy);
-	fclose(positions);
-        fclose(energies);
+        fprintf(sys->energies, "%d %lf\n",step,accepted_energy);
 	return;
 }
 
