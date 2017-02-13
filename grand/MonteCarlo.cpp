@@ -204,19 +204,15 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 {
         double delta = npe - cpe,
                random = randomish(),
-               pi = M_PI,
                e = M_E,
                beta = 1.0 / (k * sys->system_temp),//thermodynamic beta
-               // lambda is the de broglie thermal wavelength
-               lambda = (h) / (sqrt(2 * pi*sys->particle_mass*k*\
-                           sys->system_temp)),
-               lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length;
         double boltzmann_factor = pow(e,(-beta*delta)),
                acceptance,
                mu = -k*sys->system_temp *\
-                    log(volume*lambdacubed/sys->particles.size());
+                    log(volume*conv_factor*boltzmann_factor\
+                    /sys->particles.size()*k*sys->system_temp);
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         //always accept a move that lowers the energy:
@@ -238,9 +234,8 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	}
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
-		double volume_term = volume /(sys->system_temp*k \
-                        * (double)(n));
-                acceptance = volume_term * boltzmann_factor*0.0073389366;
+                acceptance = volume*beta*conv_factor/(poolplus)\
+                             * pow(e,(-beta*delta+beta*mu));
 		if (acceptance > random)
 		{
 			return true;
@@ -252,9 +247,8 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
-                double volume_term = sys->system_temp*k\
-                                     *((double)(poolplus))/(volume);
-                acceptance = volume_term * boltzmann_factor/.0073389366;
+                acceptance = pool/(volume*conv_factor) \
+                             * pow(e,((-beta*delta)-(beta*mu)));
 		if (acceptance > random)
 		{
 			return true;

@@ -33,7 +33,7 @@ typedef struct _removal_data
 	int pick;
 	double phi, gamma, delta;
 } removal_data;
-const int box_side_length = 22;
+const int box_side_length = 10;
 
 typedef struct _GCMC_System
 {
@@ -65,6 +65,7 @@ typedef struct _GCMC_System
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
 const double k = 1.0; //boltzmann constant
 const double h = 6.626e-34;//planck constant
+const double conv_factor = 0.0073389366;//converts ATM to K/A^3
 
 bool positionchecker(GCMC_System *sys, int particleID);
 double randomish();
