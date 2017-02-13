@@ -4,7 +4,7 @@
  * input reads in the particle type and stores its corresponding mass (AMU),
  * LJ epsilon (K), and LJ sigma(angstroms) in the system struct
  * ****************************************************************************/
-void input(GCMC_System *sys, char *particle_type)
+void input(GCMC_System *sys)
 {
    char argon[] = "Ar",
         helium[] = "He",
@@ -12,6 +12,7 @@ void input(GCMC_System *sys, char *particle_type)
         krypton[] = "Kr",
         xenon[] = "Xe",
         water[] = "Water";
+   char* particle_type= sys->particle_type;
    if(strcmp(particle_type,argon) == 0)
    {
        sys->sigma = 3.371914;
@@ -198,13 +199,9 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 /*******************************************************************************
 * based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
 *******************************************************************************/
-bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
+bool move_accepted(double cpe, double npe, MoveType move_type,\
                    int n, GCMC_System *sys)
 {
-	FILE * energies;
-        FILE * chemicalpotential;
-	energies = fopen("energies.dat", "a");
-        chemicalpotential = fopen("chemicalpotential.txt", "a");
         double delta = npe - cpe,
                random = randomish(),
                pi = M_PI,
@@ -216,70 +213,54 @@ bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
                lambdacubed = lambda * lambda *  lambda,
                volume = box_side_length * box_side_length *\
                         box_side_length;
-               //mu is the chemical potential, NEEDS FIX
         double boltzmann_factor = pow(e,(-beta*delta)),
+               acceptance,
                mu = -k*sys->system_temp *\
                     log(volume*lambdacubed/sys->particles.size());
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
-        fprintf(chemicalpotential, "%d %f \n",c, mu);
-        fclose(chemicalpotential);
         //always accept a move that lowers the energy:
 	if (delta < 0)
 	{
-		fprintf(energies, "%d %f \n", c, npe);
-		fclose(energies);
-		return true;
+            return true;
 	}
 	else if (move_type == TRANSLATE )//if we MOVED a particle 
 	{
-		double acceptance = boltzmann_factor;
+                acceptance = boltzmann_factor;
 		if (acceptance > random)
 		{
-			fprintf(energies, "%d %f \n", c, npe);
-			fclose(energies);
 			return true;
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, cpe);
-			fclose(energies);
 			return false;
 		}
 	}
 	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
 	{
 		double volume_term = volume /(sys->system_temp*k \
-                        * (double)(n)),
-                       acceptance = volume_term * boltzmann_factor*0.0073389366;
+                        * (double)(n));
+                acceptance = volume_term * boltzmann_factor*0.0073389366;
 		if (acceptance > random)
 		{
-			fprintf(energies, "%d %f \n", c, npe);
-			fclose(energies);
 			return true;
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, cpe);
-			fclose(energies);
 			return false;
 		}
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
                 double volume_term = sys->system_temp*k\
-                                     *((double)(poolplus))/(volume),
-                        acceptance = volume_term * boltzmann_factor/.0073389366;
+                                     *((double)(poolplus))/(volume);
+                acceptance = volume_term * boltzmann_factor/.0073389366;
 		if (acceptance > random)
 		{
-			fprintf(energies, "%d %f \n", c, npe);
-			fclose(energies);
 			return true;
 		}
 		else
 		{
-			fprintf(energies, "%d %f \n", c, cpe);
-			fclose(energies);
 			return false;
 		}
 	}
@@ -399,7 +380,7 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 }
 
 
-
+/*
 double qst_calc(int N, double energy, int c, double system_temp)
 {
 	FILE * qsts;
@@ -420,6 +401,7 @@ double qst_calc(int N, double energy, int c, double system_temp)
 	fclose(qsts);
 	return QST;
 }
+*/
 
 double sphere_volume(double diameter)
 {
@@ -438,30 +420,26 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 		current_shell,
 		previous_shell,
 		shell_volume_delta,
-		dist,
-                cutoff = box_side_length * 0.5;
+		dist;
 	int IK;
 	for (int I = 0; I<n - 1; I++)
 	{
 		for (int K = I + 1; K<n; K++)
 		{
-			dist = distfinder(sys, I, K);
-			if (dist < cutoff)
-			{
-				IK = int(dist / BinSize);
-				sys->boxes[IK] += 2;
-			}
+                    dist = distfinder(sys, I, K);
+                    IK = int(dist / BinSize);
+                    sys->boxes[IK] += 2;
 		}
 	}
 	previous_shell = 0;
         if(step==sys->maxStep-1)
         {
-            FILE * weightedradial;
-            FILE * unweightedradial;
-            unweightedradial = fopen("unweightedradialdistribution.txt", "a");
-            weightedradial = fopen("weightedradialdistribution.txt", "a");
             for (int I = 1; I <= nBins; I++)
             {
+                    FILE * weightedradial;
+                    FILE * unweightedradial;
+                    unweightedradial = fopen("unweightedradialdistribution.txt", "a");
+                    weightedradial = fopen("weightedradialdistribution.txt", "a");
                     sys->boxes[I-1] /= sys->maxStep; 
                     fprintf(unweightedradial, "%lf     %lf\n",BinSize*I,\
                             sys->boxes[I - 1]);
@@ -473,28 +451,28 @@ void radialDistribution(GCMC_System *sys, int n,int step)
                     fprintf(weightedradial, "%lf     %lf\n",BinSize*I,\
                             sys->boxes[I - 1]);
                     previous_shell = current_shell;
+                    fclose(unweightedradial);
+                    fclose(weightedradial);
             }
-            fclose(unweightedradial);
-            fclose(weightedradial);
         }
 	return;
 }
 
-
-
-void output(GCMC_System *sys, char *particle_type)
+void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        char water[] = "Water",
-             oxygen[] = "O";
-        if(strcmp(particle_type,water)==0)
-        {
-            strcpy(particle_type,oxygen);
-        }
 	FILE * positions;
 	positions = fopen("positions.xyz", "a");
+        FILE * energies;
+        energies = fopen("energies.dat", "a");
 	int p,
             pool;
 	pool = sys->particles.size();
+        char water[] = "Water",
+             oxygen[] = "O";
+        if(strcmp(sys->particle_type,water)==0)
+        {
+            strcpy(sys->particle_type,oxygen);
+        }
         if(pool==0)
         {
             return;
@@ -503,10 +481,12 @@ void output(GCMC_System *sys, char *particle_type)
 	for (p = 0; p<pool; p++)
 	{
 		fprintf(positions, "%s %lf %lf %lf\n",\
-                        particle_type, sys->particles[p].x[0],\
+                        sys->particle_type, sys->particles[p].x[0],\
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
+        fprintf(energies, "%d %lf\n",step,accepted_energy);
 	fclose(positions);
+        fclose(energies);
 	return;
 }
 

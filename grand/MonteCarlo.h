@@ -45,6 +45,7 @@ typedef struct _GCMC_System
 	double sigma,
 	       epsilon,
                particle_mass;
+        char particle_type[25];
         //system variables
         double system_temp,
                cutoff;
@@ -70,12 +71,12 @@ MoveType make_move(GCMC_System *sys);
 void undo_move(GCMC_System *sys, MoveType move);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
-bool move_accepted(double cpe, double npe, int c, MoveType move_type,\
+bool move_accepted(double cpe, double npe, MoveType move_type,\
                    int n, GCMC_System *sys);
 double qst_calc(int N, double energy, int c, double system_temp);
 double sphere_volume(double diameter);
 void radialDistribution( GCMC_System *sys, int n,int step);
-void input(GCMC_System *sys, char *particle_type);
-void output(GCMC_System *sys, char *particle_type);
+void input(GCMC_System *sys);
+void output(GCMC_System *sys,double accepted_energy , int step);
 
 #endif

@@ -17,7 +17,6 @@ a calculated QST per-frame and as an average over all frames
 
 #include "MonteCarlo.h"
 
-clock_t begin = clock();//for timing runs
 
 int main(int argc, char *argv[])
 {
@@ -26,7 +25,6 @@ int main(int argc, char *argv[])
     GCMC_System sys;
     
     //for input
-    char particle_type[25] = {0};
     int step,
         n;
     MoveType move_type;
@@ -42,35 +40,30 @@ int main(int argc, char *argv[])
                     " and the desired temperature, in that order.\n");
             exit(EXIT_FAILURE);
     }
-    sscanf(argv[1], "%s", particle_type);
+    sscanf(argv[1], "%s", sys.particle_type);
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
 
-    input(&sys, particle_type);
+    input(&sys);
 
-    srandom(time(NULL));
+    srandom(1);//time(NULL));
     FILE * positions;
-    FILE * energies;
-    FILE * qsts;
-    FILE * unweightedradial;
-    FILE * weightedradial;
-    FILE * stats;
-    FILE * chemicalpotential;
     positions = fopen("positions.xyz", "w");
     fclose(positions);
-    energies = fopen("energies.dat", "w");
-    qsts = fopen("qsts.dat", "w");
-    fclose(qsts);
+    FILE * energies;
+    energies = fopen("energies.dat", "w");//we'll close this later
+    FILE * unweightedradial;
     unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     fclose(unweightedradial);
+    FILE * weightedradial;
     weightedradial = fopen("weightedradialdistribution.txt", "w");
     fclose(weightedradial);
-    stats = fopen("stats.txt", "a");
+    FILE * chemicalpotential;
     chemicalpotential = fopen("chemicalpotential.txt","w");
     fclose(chemicalpotential);
 
     currentPE = calculate_PE(&sys);
-    fprintf(energies, "0 %f\n", currentPE);
+    fprintf(energies, "0 %lf\n", currentPE);
     fclose(energies);
 
     n = sys.particles.size();  // get particle count
@@ -86,40 +79,40 @@ int main(int argc, char *argv[])
             
             newPE = calculate_PE(&sys);
 
-            if( move_accepted(currentPE, newPE, step,\
+            if( move_accepted(currentPE, newPE,\
                         move_type, n, &sys))
             {
                     n = sys.particles.size();
-                    output(&sys, particle_type);
+                    output(&sys,newPE,step);
                     currentPE = newPE;//updates the current energy
                     sumenergy += currentPE;//adds to the running total
                     sumparticles += n;
-                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
                     radialDistribution(&sys, n,step);
                     if(n>largest_number_of_particles)
                     {
                         largest_number_of_particles = n;
+                        printf("Highest number of particles = %d\n",\
+                                largest_number_of_particles);
                     }
             }
             else // Move rejected
             {
                     n = sys.particles.size();
                     undo_move(&sys, move_type);
-                    output(&sys, particle_type);
+                    output(&sys,currentPE,step);
                     sumenergy += currentPE;
                     sumparticles += n;
-                    qst_calc(sumparticles, sumenergy, step, sys.system_temp);
+                    //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
                     radialDistribution(&sys, n,step);
                     if(n>largest_number_of_particles)
                     {
                         largest_number_of_particles = n;
+                        printf("Highest number of particles = %d\n",\
+                                largest_number_of_particles);
                     }
             }
     }
-    fclose(stats);
-    clock_t end = clock();
-    double time_spent = (double)(end - begin) / CLOCKS_PER_SEC;	
-    printf("Done! This run took %f seconds.\n"\
-            "Have a nice day!\n", time_spent);
+    printf("Run complete! Have a nice day.\n");
     return 0;
 }
