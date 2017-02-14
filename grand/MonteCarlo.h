@@ -78,7 +78,7 @@ void undo_move(GCMC_System *sys, MoveType move);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
 bool move_accepted(double cpe, double npe, MoveType move_type,\
-                   int n, GCMC_System *sys);
+                   int n, GCMC_System *sys,int step);
 double qst_calc(int N, double energy, int c, double system_temp);
 double sphere_volume(double diameter);
 void radialDistribution( GCMC_System *sys, int n,int step);

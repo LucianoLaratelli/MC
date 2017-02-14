@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 
     input(&sys);
 
-    srandom(1);//time(NULL));
+    srandom(time(NULL));
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");//we'll close this later
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
@@ -68,9 +68,9 @@ int main(int argc, char *argv[])
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
-
+            //printf("\n\nMAIN NPE = %lf\n\n",newPE);
             if( move_accepted(currentPE, newPE,\
-                        move_type, n, &sys))
+                        move_type, n, &sys,step))
             {
                     n = sys.particles.size();
                     output(&sys,newPE,step);
@@ -79,9 +79,10 @@ int main(int argc, char *argv[])
                     sumparticles += n;
                     //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
                     radialDistribution(&sys, n,step);
-                    if(n>largest_number_of_particles)
+                    if(sys.maxStep%step==0 && n>largest_number_of_particles)
                     {
                         largest_number_of_particles = n;
+                        printf("Step = %d\n",step);
                         printf("Highest number of particles = %d\n",\
                                 largest_number_of_particles);
                     }
@@ -89,15 +90,19 @@ int main(int argc, char *argv[])
             else // Move rejected
             {
                     n = sys.particles.size();
+                    //printf("size of vector before undoing move: %d\n",n);
                     undo_move(&sys, move_type);
+                    n = sys.particles.size();
+                    //printf("size of vector after undoing move: %d\n",n);
                     output(&sys,currentPE,step);
                     sumenergy += currentPE;
                     sumparticles += n;
                     //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
                     radialDistribution(&sys, n,step);
-                    if(n>largest_number_of_particles)
+                    if(sys.maxStep%step==0 && n>largest_number_of_particles)
                     {
                         largest_number_of_particles = n;
+                        printf("Step = %d\n",step);
                         printf("Highest number of particles = %d\n",\
                                 largest_number_of_particles);
                     }
