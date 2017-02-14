@@ -20,11 +20,9 @@ a calculated QST per-frame and as an average over all frames
 
 int main(int argc, char *argv[])
 {
-    //sys holds variables related to the system:
-    //particle number, stored moves, LJ sigma and epsilon
+    //sys holds system variables and anything that needs to be global 
     GCMC_System sys;
     
-    //for input
     int step,
         n;
     MoveType move_type;
@@ -46,25 +44,25 @@ int main(int argc, char *argv[])
 
     input(&sys);
 
-    srandom(time(NULL));
+    srandom(42);//time(NULL));
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");//we'll close this later
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
-    sys.chemicalpotential = fopen("chemicalpotential.txt","w");
+    sys.particlecount = fopen("particlecount.txt", "w");
 
-    currentPE = calculate_PE(&sys);
+    currentPE = calculate_PE(&sys);//energy at step 0
     fprintf(sys.energies, "0 %lf\n", currentPE);
 
     n = sys.particles.size();  // get particle count
     sumenergy = currentPE;//the sum has to include initial starting energy
     sumparticles = n;
 
-    int largest_number_of_particles = n;
-
     for(step = 1; step<sys.maxStep; step++)
     {
             //first step of the monte carlo algorithm
+            //printf("~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+            //printf("BEGINNING MONTE CARLO MOVE\n");
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
@@ -73,46 +71,35 @@ int main(int argc, char *argv[])
                         move_type, n, &sys,step))
             {
                     n = sys.particles.size();
-                    output(&sys,newPE,step);
+                    output(&sys,newPE,step,n);
                     currentPE = newPE;//updates the current energy
                     sumenergy += currentPE;//adds to the running total
                     sumparticles += n;
-                    //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
-                    radialDistribution(&sys, n,step);
-                    if(sys.maxStep%step==0 && n>largest_number_of_particles)
+                    if(step > step*0.5)//we let the system equilibrate a bit
                     {
-                        largest_number_of_particles = n;
-                        printf("Step = %d\n",step);
-                        printf("Highest number of particles = %d\n",\
-                                largest_number_of_particles);
+                        radialDistribution(&sys, n,step);
                     }
             }
             else // Move rejected
             {
-                    n = sys.particles.size();
-                    //printf("size of vector before undoing move: %d\n",n);
                     undo_move(&sys, move_type);
                     n = sys.particles.size();
-                    //printf("size of vector after undoing move: %d\n",n);
-                    output(&sys,currentPE,step);
+                    output(&sys,currentPE,step,n);
                     sumenergy += currentPE;
                     sumparticles += n;
-                    //qst_calc(sumparticles, sumenergy, step, sys.system_temp);
-                    radialDistribution(&sys, n,step);
-                    if(sys.maxStep%step==0 && n>largest_number_of_particles)
+                    if(step > step*0.5)
                     {
-                        largest_number_of_particles = n;
-                        printf("Step = %d\n",step);
-                        printf("Highest number of particles = %d\n",\
-                                largest_number_of_particles);
+                        radialDistribution(&sys, n,step);
                     }
             }
+            //printf("LEAVING MONTE CARLO MOVE\n");
+            //printf("~~~~~~~~~~~~~~~~~~~~~~~~\n");
     }
     printf("Run complete! Have a nice day.\n");
     fclose(sys.positions);
     fclose(sys.energies);
     fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
-    fclose(sys.chemicalpotential);
+    fclose(sys.particlecount);
     return 0;
 }

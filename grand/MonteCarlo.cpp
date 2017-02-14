@@ -63,6 +63,7 @@ void input(GCMC_System *sys)
 
 MoveType make_move(GCMC_System *sys)
 {
+       //printf("ENTERING MAKE_MOVE\n");
 	MoveType move;
 	int pool = sys->particles.size();
 
@@ -85,7 +86,6 @@ MoveType make_move(GCMC_System *sys)
 		else if (choice >= (2.0/3.0))
 		{
 			create_particle(sys);
-			pool = sys->particles.size();
 			move = CREATE_PARTICLE;
 		}
 		else
@@ -94,6 +94,7 @@ MoveType make_move(GCMC_System *sys)
 			move = DESTROY_PARTICLE;
 		}
 	}
+       //printf("LEAVING MAKE_MOVE\n");
 	return move;
 }
 
@@ -101,16 +102,12 @@ MoveType make_move(GCMC_System *sys)
 //insert particle at random location
 void create_particle( GCMC_System *sys)
 {
-	particle added; //making a struct to push_back to the vector
+       //printf("INSERTING A PARTICLE");
+	particle added; //making a struct to push back to the vector
 	added.x[0] = randomish()*box_side_length;
 	added.x[1] = randomish()*box_side_length;
 	added.x[2] = randomish()*box_side_length;
-        //store coordinates of inserted particle in case of rejection
-	sys->creator.phi = added.x[0];
-	sys->creator.gamma = added.x[1];
-	sys->creator.delta = added.x[2];
 	sys->particles.push_back(added);
-	sys->creator.pick = sys->particles.size() - 1; //index of new particle
 	return;
 }
 
@@ -118,6 +115,7 @@ void create_particle( GCMC_System *sys)
 //moves a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
+       //printf("MOVING A PARTICLE\n");
         //phi,gamma, and delta are random floats between 0 and L
         double phi = (randomish()-0.5)* box_side_length,
                gamma = (randomish()-0.5)*box_side_length,
@@ -150,28 +148,34 @@ void move_particle(GCMC_System *sys, int pick)
 //particle deletion
 void destroy_particle(GCMC_System *sys, int pick)
 {
-	sys->destroy.pick = pick;
+       //printf("DESTROYING PARTICLE\n");
 	sys->destroy.phi = sys->particles[pick].x[0];
 	sys->destroy.gamma = sys->particles[pick].x[1];
 	sys->destroy.delta = sys->particles[pick].x[2];
+       //printf("DESTROY PARTICLE\n PHI = %lf \nGAMMA = %lf\nDELTA=%lf\n",sys->destroy.phi,sys->destroy.gamma,sys->destroy.delta);
         //"begin" (below) points to the address of the zeroth item 
-	// we add "pick" amount of bytes 
-	// to get to the address of the "pickth" item 
-	sys->particles.pop_back();
-        ////printf("fuck\n");
+	// we move forward "pick" addresses 
+	// to get to the address of the item we want
+	sys->particles.erase(sys->particles.begin()+pick);
         return;
+}
+
+void undo_insertion(GCMC_System *sys)
+{
+   //printf("UNDOING INSERTION\n");
+    sys->particles.pop_back();
 }
 
 
 //calculates potential of the system
 double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 {
+       //printf("CALCULATING POTENTIAL ENERGY...\n");
 	int b, //counter variables
             c,
             pool = sys->particles.size();
 	double r,
 	       pe = 0.00,
-               cutoff = box_side_length * 0.5,
                rinv;
 	double sor6,//powers of sigma over r for the potential equation
                sor12;
@@ -183,17 +187,14 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
             for (c = b + 1; c < pool; c++)
             {
                 r = distfinder(sys, b, c);
-/*                if (r > cutoff)
-                {
-                    continue; 
-                }*/
                 rinv = 1.0 / r;
                 sor12 = pow(sigma,12)*pow(rinv,12); 
                 sor6 = pow(sigma,6)*pow(rinv,6); 
                 pe += 4.0 * epsilon * (sor12 - sor6);
-                //printf("r = %lf\nsor6= %lf\nsor12=%lf\nsigma=%lf\nepsilon=%lf\npe=%lf\n\n",r,sor6,sor12,sigma,epsilon,pe);
+               //printf("ENERGY r = %lf for particles %d and %d\n",r,b,c);//sor6= %lf\nsor12=%lf\nsigma=%lf\nepsilon=%lf\npe=%lf\n\n",r,sor6,sor12,sigma,epsilon,pe);
             }
 	}
+       //printf("DONE CALCULATING POTENTIAL ENERGY\n");
 	return pe;
 }
 
@@ -215,19 +216,20 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	int pool = n, //size of the system BEFORE the move we are making
             poolplus = pool + 1;//size of the system AFTER particle insertion 
         //always accept a move that lowers the energy:
+       //printf("ENTERING MOVE ACCEPTED\n");
 	if (move_type == TRANSLATE )//if we MOVED a particle 
 	{
                 acceptance = boltzmann_factor;
 		if (acceptance > random)
 		{
-                        //printf("Accepted TRANSLATION\
+                       /*printf("Accepted TRANSLATION\
                                 in step %d\nCPE= %lf\nNPE=%lf\n\n\
-                                boltzmann = %lf",step,cpe,npe,boltzmann_factor);
+                                boltzmann = %lf\n",step,cpe,npe,boltzmann_factor);*/
 			return true;
 		}
 		else
 		{
-                        //printf("Rejected TRANSLATION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
+                       //printf("Rejected TRANSLATION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
@@ -237,15 +239,15 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
                             (double)pool)*boltzmann_factor;
 		if (acceptance > random)
 		{
-                        //printf("Accepted INSERTION in step %d\nCPE=\
+                       /*printf("Accepted INSERTION in step %d\nCPE=\
                                 %lf\nNPE=%lf\n\n\
                                 boltzmann = %lf\n\
-                                acceptance = %lf\n",step,cpe,npe,boltzmann_factor,acceptance);
+                                acceptance = %lf\n",step,cpe,npe,boltzmann_factor,acceptance);*/
 			return true;
 		}
 		else
 		{
-                        //printf("Rejected INSERTION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
+                       //printf("Rejected INSERTION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
@@ -255,14 +257,14 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
                         conv_factor);
 		if (acceptance > random)
 		{
-                        //printf("Accepted REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n\
+                       /*printf("Accepted REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n\
                                 boltzmann=%lf\n\
-                                acceptance=%lf\n",step,cpe,npe,boltzmann_factor,acceptance);
+                                acceptance=%lf\n",step,cpe,npe,boltzmann_factor,acceptance);*/
 			return true;
 		}
 		else
 		{
-                        //printf("rejected REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
+                       //printf("rejected REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
@@ -279,14 +281,16 @@ void undo_move(GCMC_System *sys, MoveType move)
 	}
 	else if (move == CREATE_PARTICLE)
 	{
-		destroy_particle(sys, sys->creator.pick);
+	        undo_insertion(sys);	
 	}
 	else
 	{
 		particle added;
-		added.x[0] = sys->creator.phi;
-		added.x[1] = sys->creator.gamma;
-		added.x[2] = sys->creator.delta;
+		added.x[0] = sys->destroy.phi;
+		added.x[1] = sys->destroy.gamma;
+		added.x[2] = sys->destroy.delta;
+       //printf("UNDO MOVE\n PHI = %lf \nGAMMA = %lf\nDELTA=%lf\n",sys->destroy.phi,sys->destroy.gamma,sys->destroy.delta);
+                
 		sys->particles.push_back(added);
 	}
 	return;
@@ -382,31 +386,9 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 }
 
 
-/*
-double qst_calc(int N, double energy, int c, double system_temp)
+double sphere_volume(GCMC_System *sys,double diameter)
 {
-	FILE * qsts;
-	qsts = fopen("qsts.dat", "a");
-	double T = system_temp,
-               average_N = N / c,//<N>
-               average_N_all_squared = average_N * average_N,//<N>^2
-               average_energy = energy / c,//<U>
-               N_squared = average_N * average_N,
-               average_of_N_squared = N_squared * N_squared,//<N^2>
-               particles_by_energy = average_N * average_energy,
-               average_of_particles_by_energy = particles_by_energy / c, //<NU>
-               numerator = (average_of_particles_by_energy)-\
-                           (average_N * average_energy),
-               denominator = average_of_N_squared - average_N_all_squared,
-               QST = k * T - (numerator / denominator);
-	fprintf(qsts, "%d %lf\n", c, QST);
-	fclose(qsts);
-	return QST;
-}
-*/
-
-double sphere_volume(double diameter)
-{
+        diameter = diameter*sys->BinSize;
 	double radius = diameter / 2.0;//this is important
 
         double	volume = (4.0 / 3.0) * M_PI * radius * radius * radius;
@@ -414,14 +396,14 @@ double sphere_volume(double diameter)
         return volume;
 }
 
-//make bins system vars to get average
+
 void radialDistribution(GCMC_System *sys, int n,int step)
 {
-//    printf("ENTERING RADIAL DIST FUNCTION\n");
+       //printf("ENTERING RADIAL DIST FUNCTION\n");
 	const int nBins = sys->nBins; //total number of bins
 	double  BinSize = sys->BinSize,
                 volume= box_side_length*box_side_length*box_side_length,
-		num_density = (double)n / volume,
+		num_density = n / volume,
 		expected_number_of_particles,
 		current_shell,
 		previous_shell,
@@ -433,7 +415,7 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 		for (int K = I + 1; K<n; K++)
 		{
                     dist = distfinder(sys, I, K);
-                    //printf("RADIAL R = %lf\n",dist);
+                   //printf("RADIAL r = %lf for particles %d and %d\n",dist,I,K);
                     IK = int(dist / BinSize);
                     sys->boxes[IK] += 2;
 		}
@@ -443,30 +425,34 @@ void radialDistribution(GCMC_System *sys, int n,int step)
         {
             for (int I = 1; I <= nBins; I++)
             {
-                    sys->boxes[I-1] /= sys->maxStep; 
-                    fprintf(sys->unweightedradial, "%lf     %lf\n",BinSize*I,\
+                   //printf("number of particles = %d\n",n);
+                    sys->boxes[I-1] /= sys->maxStep/2.; 
+                    fprintf(sys->unweightedradial, "%lf     %lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
                     current_shell = I;
-                    shell_volume_delta = (sphere_volume(current_shell) -\
-                                          sphere_volume(previous_shell));
+                    shell_volume_delta = (sphere_volume(sys,current_shell) -\
+                                          sphere_volume(sys,previous_shell));
+                   //printf("Number density = %lf\n",num_density);
                     expected_number_of_particles = shell_volume_delta * num_density;
-                    //printf("expected_number_of_particles = %lf\n",expected_number_of_particles);
+                   //printf("expected_number_of_particles = %lf\n",expected_number_of_particles);
+                   //printf("unweighted boxes = %lf",sys->boxes[I-1]);
                     sys->boxes[I - 1] /= expected_number_of_particles;
+                   //printf("weighted boxes = %lf",sys->boxes[I-1]);
                     fprintf(sys->weightedradial, "%lf     %lf\n",BinSize*(I-1),\
                             
                             sys->boxes[I - 1]);
                     previous_shell = current_shell;
             }
         }
-    //printf("LEAVING RADIAL DIST FUNCTION\n");
+       //printf("LEAVING RADIAL DIST FUNCTION\n");
 	return;
 }
 
-void output(GCMC_System *sys, double accepted_energy, int step)
+void output(GCMC_System *sys, double accepted_energy, int step,int n)
 {
-        if(sys->energies == NULL || sys->positions==NULL)
+        if(sys->energies == NULL || sys->positions==NULL || sys->particlecount == NULL)
         {
-            //printf("File pointers in output are null!\n");
+            printf("File pointers in output are null!\n");
             exit(EXIT_FAILURE);
         }
 	int p,
@@ -490,6 +476,15 @@ void output(GCMC_System *sys, double accepted_energy, int step)
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
         fprintf(sys->energies, "%d %lf\n",step,accepted_energy);
+        int highest_number_of_particles = n;
+        if(n>highest_number_of_particles)
+        {
+            highest_number_of_particles = n;
+        }
+        if(step==sys->maxStep-1)
+        {
+            fprintf(sys->particlecount, "%d %d\n",step,highest_number_of_particles);
+        }
 	return;
 }
 

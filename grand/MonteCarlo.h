@@ -22,18 +22,12 @@ typedef struct _translational_data
 	double phi, gamma, delta;
 } translational_data;
 
-typedef struct _creation_data
-{
-	int pick;
-	double phi, gamma, delta;
-} creation_data;
-
 typedef struct _removal_data
 {
 	int pick;
 	double phi, gamma, delta;
 } removal_data;
-const int box_side_length = 10;
+const int box_side_length = 100;
 
 typedef struct _GCMC_System
 {
@@ -41,10 +35,9 @@ typedef struct _GCMC_System
         FILE * energies;
         FILE * unweightedradial;
         FILE * weightedradial;
-        FILE * chemicalpotential;
+        FILE * particlecount;
 	std::vector <particle> particles;
 	translational_data move;
-	creation_data creator;
 	removal_data destroy;
         //lennard-jones parameters
 	double sigma,
@@ -56,7 +49,7 @@ typedef struct _GCMC_System
                cutoff;
         int    maxStep;
         //next three lines are for radial distribution function
-        static constexpr int nBins = (box_side_length/2 + 1)*100;
+        static constexpr int nBins = 400;//(box_side_length/2 + 1)*100;
         double BinSize = box_side_length/(double)nBins;
         double boxes[nBins] = {0};
 } GCMC_System;
@@ -79,10 +72,10 @@ double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
 bool move_accepted(double cpe, double npe, MoveType move_type,\
                    int n, GCMC_System *sys,int step);
-double qst_calc(int N, double energy, int c, double system_temp);
-double sphere_volume(double diameter);
+double sphere_volume(GCMC_System *sys,double diameter);
 void radialDistribution( GCMC_System *sys, int n,int step);
+void undo_insertion(GCMC_System *sys);
 void input(GCMC_System *sys);
-void output(GCMC_System *sys,double accepted_energy , int step);
+void output(GCMC_System *sys,double accepted_energy , int step, int n);
 
 #endif
