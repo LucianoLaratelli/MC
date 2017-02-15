@@ -328,7 +328,6 @@ double sphere_volume(GCMC_System *sys,double diameter)
 
 void radialDistribution(GCMC_System *sys,int step)
 {
-       //printf("ENTERING RADIAL DIST FUNCTION\n");
 	const int nBins = sys->nBins; //total number of bins
 	int IK,
             n = sys->particles.size();
@@ -354,7 +353,6 @@ void radialDistribution(GCMC_System *sys,int step)
         {
             for (int I = 1; I <= nBins; I++)
             {
-                   //printf("number of particles = %d\n",n);
                     sys->boxes[I-1] /= sys->maxStep/2.; 
                     fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
@@ -373,12 +371,6 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        if(sys->energies == NULL || sys->positions ==NULL\
-           || sys->particlecount == NULL)
-        {
-            printf("File pointers in output are null!\n");
-            exit(EXIT_FAILURE);
-        }
 	int pool = sys->particles.size();
         char water[] = "Water",
              oxygen[] = "O";
@@ -390,6 +382,7 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         {
             return;
         }
+
 	fprintf(sys->positions, "%d \n\n", pool);
 	for (int p = 0; p<pool; p++)
 	{
@@ -400,7 +393,8 @@ void output(GCMC_System *sys, double accepted_energy, int step)
 
         double average_num_particles = sys->sumparticles/step;
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
-
+        printf("average_num_particles = %lf\n",average_num_particles);
+        
         double average_energy = sys->sumenergy/step;
         fprintf(sys->energies, "%d %lf\n",step,accepted_energy);
         fprintf(sys->average_energies, "%d %lf\n",step,average_energy);
