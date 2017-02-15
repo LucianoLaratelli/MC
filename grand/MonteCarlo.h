@@ -63,22 +63,28 @@ const double k = 1.0; //boltzmann constant
 const double h = 6.626e-34;//planck constant
 const double conv_factor = 0.0073389366;//converts ATM to K/A^3
 
-bool positionchecker(GCMC_System *sys, int particleID);
-double randomish();
-void unmove_particle(GCMC_System *sys);
-void move_particle(GCMC_System *sys, int pick);
-void create_particle(GCMC_System *sys);
-void destroy_particle(GCMC_System *sys, int pick);
-MoveType make_move(GCMC_System *sys);
-void undo_move(GCMC_System *sys, MoveType move);
-double distfinder(GCMC_System *sys, int id_a, int id_b);
+void input(GCMC_System *sys);
+
+
 double calculate_PE(GCMC_System *sys);
+double distfinder(GCMC_System *sys, int id_a, int id_b);
+MoveType make_move(GCMC_System *sys);
+
+void create_particle(GCMC_System *sys);
+void move_particle(GCMC_System *sys, int pick);
+void destroy_particle(GCMC_System *sys, int pick);
+
+double randomish();
 bool move_accepted(double cpe, double npe, MoveType move_type,\
                    GCMC_System *sys,int step);
+
+void undo_move(GCMC_System *sys, MoveType move);
+void undo_insertion(GCMC_System *sys);
+void unmove_particle(GCMC_System *sys);
+
 double sphere_volume(GCMC_System *sys,double diameter);
 void radialDistribution( GCMC_System *sys,int step);
-void undo_insertion(GCMC_System *sys);
-void input(GCMC_System *sys);
+
 void output(GCMC_System *sys,double accepted_energy , int step);
 
 #endif

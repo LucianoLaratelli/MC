@@ -60,6 +60,68 @@ void input(GCMC_System *sys)
    return;
 }     
 
+//calculates potential of the system
+double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
+{
+       //printf("CALCULATING POTENTIAL ENERGY...\n");
+	int b, //counter variables
+            c,
+            pool = sys->particles.size();
+	double r,
+	       pe = 0.00,
+               rinv;
+	double sor6,//powers of sigma over r for the potential equation
+               sor12;
+	double sigma = sys->sigma,
+               epsilon = sys->epsilon;
+
+	for (b = 0; b < pool - 1; b++)
+	{
+            for (c = b + 1; c < pool; c++)
+            {
+                r = distfinder(sys, b, c);
+                rinv = 1.0 / r;
+                sor12 = pow(sigma,12)*pow(rinv,12); 
+                sor6 = pow(sigma,6)*pow(rinv,6); 
+                pe += 4.0 * epsilon * (sor12 - sor6);
+               //printf("ENERGY r = %lf for particles %d and %d\n",r,b,c);//sor6= %lf\nsor12=%lf\nsigma=%lf\nepsilon=%lf\npe=%lf\n\n",r,sor6,sor12,sigma,epsilon,pe);
+            }
+	}
+       //printf("DONE CALCULATING POTENTIAL ENERGY\n");
+	return pe;
+}
+
+//finds distance between every pair of particles for use in 
+//potential calculation
+double distfinder(GCMC_System *sys, int id_a, int id_b)
+{
+	double dist,
+               delta,
+               delta2 = 0.00,
+               cutoff = box_side_length * 0.5;
+        //distance is done coordinate by coordinate
+        //(remember x[0] = x position etc
+
+	for(int i = 0; i<3; i++)
+	{
+		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
+                //the following conditionals are the minimum image convention
+                //that make up part of periodic boundary conditions
+		if (delta >= cutoff)
+		{
+			delta -= box_side_length;
+		}
+		else if (delta <= -cutoff)
+		{
+			delta += box_side_length;
+		}
+                //distance requires sum of squares of distance in each
+                //coordinate direction
+		delta2 += delta * delta;
+	}
+	dist = sqrt(delta2);
+	return dist;
+}
 
 MoveType make_move(GCMC_System *sys)
 {
@@ -80,13 +142,13 @@ MoveType make_move(GCMC_System *sys)
 		fflush(stdout);
 		if (choice<(1.0/3.0))
 		{
-			move_particle(sys, pick);
-			move = TRANSLATE;
+			create_particle(sys);
+			move = CREATE_PARTICLE;
 		}
 		else if (choice >= (2.0/3.0))
 		{
-			create_particle(sys);
-			move = CREATE_PARTICLE;
+			move_particle(sys, pick);
+			move = TRANSLATE;
 		}
 		else
 		{
@@ -160,48 +222,13 @@ void destroy_particle(GCMC_System *sys, int pick)
         return;
 }
 
-void undo_insertion(GCMC_System *sys)
+//returns a random float between 0 and 1
+double randomish()
 {
-   //printf("UNDOING INSERTION\n");
-    sys->particles.pop_back();
+	double r = random();
+	return r / ((double)RAND_MAX + 1);
 }
 
-
-//calculates potential of the system
-double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
-{
-       //printf("CALCULATING POTENTIAL ENERGY...\n");
-	int b, //counter variables
-            c,
-            pool = sys->particles.size();
-	double r,
-	       pe = 0.00,
-               rinv;
-	double sor6,//powers of sigma over r for the potential equation
-               sor12;
-	double sigma = sys->sigma,
-               epsilon = sys->epsilon;
-
-	for (b = 0; b < pool - 1; b++)
-	{
-            for (c = b + 1; c < pool; c++)
-            {
-                r = distfinder(sys, b, c);
-                rinv = 1.0 / r;
-                sor12 = pow(sigma,12)*pow(rinv,12); 
-                sor6 = pow(sigma,6)*pow(rinv,6); 
-                pe += 4.0 * epsilon * (sor12 - sor6);
-               //printf("ENERGY r = %lf for particles %d and %d\n",r,b,c);//sor6= %lf\nsor12=%lf\nsigma=%lf\nepsilon=%lf\npe=%lf\n\n",r,sor6,sor12,sigma,epsilon,pe);
-            }
-	}
-       //printf("DONE CALCULATING POTENTIAL ENERGY\n");
-	return pe;
-}
-
-
-/*******************************************************************************
-* based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
-*******************************************************************************/
 bool move_accepted(double cpe, double npe, MoveType move_type,\
                    GCMC_System *sys,int step)
 {
@@ -270,17 +297,16 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	return true;
 }
 
-
 //undoes rejected moves based on move types
 void undo_move(GCMC_System *sys, MoveType move)
 {
-	if (move == TRANSLATE)
-	{
-		unmove_particle(sys);
-	}
-	else if (move == CREATE_PARTICLE)
+	if (move == CREATE_PARTICLE)
 	{
 	        undo_insertion(sys);	
+	}
+	else if (move == TRANSLATE)
+	{
+		unmove_particle(sys);
 	}
 	else
 	{
@@ -288,11 +314,15 @@ void undo_move(GCMC_System *sys, MoveType move)
 		added.x[0] = sys->destroy.phi;
 		added.x[1] = sys->destroy.gamma;
 		added.x[2] = sys->destroy.delta;
-       //printf("UNDO MOVE\n PHI = %lf \nGAMMA = %lf\nDELTA=%lf\n",sys->destroy.phi,sys->destroy.gamma,sys->destroy.delta);
-                
 		sys->particles.push_back(added);
 	}
 	return;
+}
+
+void undo_insertion(GCMC_System *sys)
+{
+   //printf("UNDOING INSERTION\n");
+    sys->particles.pop_back();
 }
 
 
@@ -344,45 +374,8 @@ bool positionchecker(GCMC_System *sys, int particleID )
 }
 
 
-//returns a random float between 0 and 1
-double randomish()
-{
-	double r = random();
-	return r / ((double)RAND_MAX + 1);
-}
 
 
-//finds distance between every pair of particles for use in 
-//potential calculation
-double distfinder(GCMC_System *sys, int id_a, int id_b)
-{
-	double dist,
-               delta,
-               delta2 = 0.00,
-               cutoff = box_side_length * 0.5;
-        //distance is done coordinate by coordinate
-        //(remember x[0] = x position etc
-
-	for(int i = 0; i<3; i++)
-	{
-		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
-                //the following conditionals are the minimum image convention
-                //that make up part of periodic boundary conditions
-		if (delta >= cutoff)
-		{
-			delta -= box_side_length;
-		}
-		else if (delta <= -cutoff)
-		{
-			delta += box_side_length;
-		}
-                //distance requires sum of squares of distance in each
-                //coordinate direction
-		delta2 += delta * delta;
-	}
-	dist = sqrt(delta2);
-	return dist;
-}
 
 
 double sphere_volume(GCMC_System *sys,double diameter)
