@@ -27,7 +27,7 @@ typedef struct _removal_data
 	int pick;
 	double phi, gamma, delta;
 } removal_data;
-const int box_side_length = 10;
+const int box_side_length = 100;
 
 typedef struct _GCMC_System
 {
@@ -36,6 +36,7 @@ typedef struct _GCMC_System
         FILE * unweightedradial;
         FILE * weightedradial;
         FILE * particlecount;
+        FILE * average_energies;
 	std::vector <particle> particles;
 	translational_data move;
 	removal_data destroy;
@@ -48,8 +49,10 @@ typedef struct _GCMC_System
         double system_temp,
                cutoff;
         int    maxStep;
+        double sumparticles,
+               sumenergy;
         //next three lines are for radial distribution function
-        static constexpr int nBins = 40;//(box_side_length/2 + 1)*100;
+        static constexpr int nBins = 400;//(box_side_length/2 + 1)*100;
         double BinSize = box_side_length/(double)nBins;
         double boxes[nBins] = {0};
 } GCMC_System;
@@ -71,11 +74,11 @@ void undo_move(GCMC_System *sys, MoveType move);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 double calculate_PE(GCMC_System *sys);
 bool move_accepted(double cpe, double npe, MoveType move_type,\
-                   int n, GCMC_System *sys,int step);
+                   GCMC_System *sys,int step);
 double sphere_volume(GCMC_System *sys,double diameter);
-void radialDistribution( GCMC_System *sys, int n,int step);
+void radialDistribution( GCMC_System *sys,int step);
 void undo_insertion(GCMC_System *sys);
 void input(GCMC_System *sys);
-void output(GCMC_System *sys,double accepted_energy , int step, int n);
+void output(GCMC_System *sys,double accepted_energy , int step);
 
 #endif

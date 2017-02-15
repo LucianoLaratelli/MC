@@ -27,9 +27,7 @@ int main(int argc, char *argv[])
         n;
     MoveType move_type;
     double currentPE,
-           newPE,
-           sumenergy,
-           sumparticles;
+           newPE;
 
     if (argc != 4)
     {
@@ -43,20 +41,20 @@ int main(int argc, char *argv[])
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
 
     input(&sys);
-
     srandom(time(NULL));
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");//we'll close this later
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
-    sys.particlecount = fopen("particlecount.txt", "w");
+    sys.particlecount = fopen("particlecount.dat", "w");
+    sys.average_energies = fopen("average_energy.dat","w");
 
     currentPE = calculate_PE(&sys);//energy at step 0
     fprintf(sys.energies, "0 %lf\n", currentPE);
 
     n = sys.particles.size();  // get particle count
-    sumenergy = currentPE;//the sum has to include initial starting energy
-    sumparticles = n;
+    sys.sumenergy = currentPE;//the sum has to include initial starting energy
+    sys.sumparticles = n;
 
     for(step = 1; step<sys.maxStep; step++)
     {
@@ -68,28 +66,28 @@ int main(int argc, char *argv[])
             newPE = calculate_PE(&sys);
             //printf("\n\nMAIN NPE = %lf\n\n",newPE);
             if( move_accepted(currentPE, newPE,\
-                        move_type, n, &sys,step))
+                        move_type, &sys,step))
             {
                     n = sys.particles.size();
-                    output(&sys,newPE,step,n);
+                    output(&sys,newPE,step);
                     currentPE = newPE;//updates the current energy
-                    sumenergy += currentPE;//adds to the running total
-                    sumparticles += n;
+                    sys.sumenergy += currentPE;//adds to the running total
+                    sys.sumparticles += n;
                     if(step > step*0.5)//we let the system equilibrate a bit
                     {
-                        radialDistribution(&sys, n,step);
+                        radialDistribution(&sys,step);
                     }
             }
             else // Move rejected
             {
                     undo_move(&sys, move_type);
                     n = sys.particles.size();
-                    output(&sys,currentPE,step,n);
-                    sumenergy += currentPE;
-                    sumparticles += n;
+                    output(&sys,currentPE,step);
+                    sys.sumenergy += currentPE;
+                    sys.sumparticles += n;
                     if(step > step*0.5)
                     {
-                        radialDistribution(&sys, n,step);
+                        radialDistribution(&sys,step);
                     }
             }
             //printf("LEAVING MONTE CARLO MOVE\n");
@@ -101,5 +99,6 @@ int main(int argc, char *argv[])
     fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
     fclose(sys.particlecount);
+    fclose(sys.average_energies);
     return 0;
 }

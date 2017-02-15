@@ -203,7 +203,7 @@ double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
 * based on page 130 of UMS(2.ed.) by Frenkel and Smit.                 
 *******************************************************************************/
 bool move_accepted(double cpe, double npe, MoveType move_type,\
-                   int n, GCMC_System *sys,int step)
+                   GCMC_System *sys,int step)
 {
         double delta = npe - cpe,
                random = randomish(),
@@ -213,9 +213,8 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
                         box_side_length;
         double boltzmann_factor = pow(e,(-beta*delta)),
                acceptance;
-	int pool = n, //size of the system BEFORE the move we are making
+	int pool = sys->particles.size(),
             poolplus = pool + 1;//size of the system AFTER particle insertion 
-        //always accept a move that lowers the energy:
        //printf("ENTERING MOVE ACCEPTED\n");
 	if (move_type == TRANSLATE )//if we MOVED a particle 
 	{
@@ -397,10 +396,12 @@ double sphere_volume(GCMC_System *sys,double diameter)
 }
 
 
-void radialDistribution(GCMC_System *sys, int n,int step)
+void radialDistribution(GCMC_System *sys,int step)
 {
        //printf("ENTERING RADIAL DIST FUNCTION\n");
 	const int nBins = sys->nBins; //total number of bins
+	int IK,
+            n = sys->particles.size();
 	double  BinSize = sys->BinSize,
                 volume= box_side_length*box_side_length*box_side_length,
 		num_density = n / volume,
@@ -409,7 +410,6 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 		previous_shell,
 		shell_volume_delta,
 		dist;
-	int IK;
 	for (int I = 0; I<n - 1; I++)
 	{
 		for (int K = I + 1; K<n; K++)
@@ -448,9 +448,11 @@ void radialDistribution(GCMC_System *sys, int n,int step)
 	return;
 }
 
-void output(GCMC_System *sys, double accepted_energy, int step,int n)
+void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        if(sys->energies == NULL || sys->positions==NULL || sys->particlecount == NULL)
+        if(sys->energies == NULL ||\
+           sys->positions ==NULL || \
+           sys->particlecount == NULL)
         {
             printf("File pointers in output are null!\n");
             exit(EXIT_FAILURE);
@@ -475,16 +477,12 @@ void output(GCMC_System *sys, double accepted_energy, int step,int n)
                         sys->particle_type, sys->particles[p].x[0],\
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
+        double average_num_particles = sys->sumparticles/step;
+        fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
+
+        double average_energy = sys->sumenergy/step;
         fprintf(sys->energies, "%d %lf\n",step,accepted_energy);
-        int highest_number_of_particles = n;
-        if(n>highest_number_of_particles)
-        {
-            highest_number_of_particles = n;
-        }
-        if(step==sys->maxStep-1)
-        {
-            fprintf(sys->particlecount, "%d %d\n",step,highest_number_of_particles);
-        }
+        fprintf(sys->average_energies, "%d %lf\n",step,average_energy);
 	return;
 }
 
