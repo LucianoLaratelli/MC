@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
 
     input(&sys);
 
-    srandom(42);//time(NULL));
+    srandom(time(NULL));
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");//we'll close this later
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");

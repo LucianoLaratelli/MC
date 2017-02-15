@@ -27,7 +27,7 @@ typedef struct _removal_data
 	int pick;
 	double phi, gamma, delta;
 } removal_data;
-const int box_side_length = 100;
+const int box_side_length = 10;
 
 typedef struct _GCMC_System
 {
@@ -49,7 +49,7 @@ typedef struct _GCMC_System
                cutoff;
         int    maxStep;
         //next three lines are for radial distribution function
-        static constexpr int nBins = 400;//(box_side_length/2 + 1)*100;
+        static constexpr int nBins = 40;//(box_side_length/2 + 1)*100;
         double BinSize = box_side_length/(double)nBins;
         double boxes[nBins] = {0};
 } GCMC_System;
