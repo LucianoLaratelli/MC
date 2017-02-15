@@ -1,7 +1,6 @@
 #include <vector>
 #include <math.h>
 #include <stdio.h>
-#include <time.h>
 #include <random>
 #include <stdlib.h>
 #include <string.h>
@@ -9,12 +8,10 @@
 #ifndef MONTE_CARLO_H
 #define MONTE_CARLO_H
 
-
 typedef struct particle_particle
 {
 	double x[3];
 } particle;
-
 
 typedef struct _translational_data
 {
@@ -24,9 +21,9 @@ typedef struct _translational_data
 
 typedef struct _removal_data
 {
-	int pick;
 	double phi, gamma, delta;
 } removal_data;
+
 const int box_side_length = 100;
 
 typedef struct _GCMC_System
@@ -40,7 +37,7 @@ typedef struct _GCMC_System
 	std::vector <particle> particles;
 	translational_data move;
 	removal_data destroy;
-        //lennard-jones parameters
+        //Lennard-Jones parameters
 	double sigma,
 	       epsilon,
                particle_mass;
@@ -49,16 +46,17 @@ typedef struct _GCMC_System
         double system_temp,
                cutoff;
         int    maxStep;
+        //for averaging
         double sumparticles,
                sumenergy;
         //next three lines are for radial distribution function
-        static constexpr int nBins = 400;//(box_side_length/2 + 1)*100;
-        double BinSize = box_side_length/(double)nBins;
+        static constexpr int nBins = box_side_length/.25;
+        double BinSize = box_side_length/(double)nBins;//each bin is .25 Angs.
         double boxes[nBins] = {0};
 } GCMC_System;
 
-
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
+
 const double k = 1.0; //boltzmann constant
 const double h = 6.626e-34;//planck constant
 const double conv_factor = 0.0073389366;//converts ATM to K/A^3
@@ -68,15 +66,16 @@ void input(GCMC_System *sys);
 
 double calculate_PE(GCMC_System *sys);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
+
+double randomish();
 MoveType make_move(GCMC_System *sys);
 
 void create_particle(GCMC_System *sys);
 void move_particle(GCMC_System *sys, int pick);
 void destroy_particle(GCMC_System *sys, int pick);
 
-double randomish();
 bool move_accepted(double cpe, double npe, MoveType move_type,\
-                   GCMC_System *sys,int step);
+                   GCMC_System *sys);
 
 void undo_move(GCMC_System *sys, MoveType move);
 void undo_insertion(GCMC_System *sys);

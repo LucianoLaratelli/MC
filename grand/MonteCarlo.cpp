@@ -60,53 +60,39 @@ void input(GCMC_System *sys)
    return;
 }     
 
-//calculates potential of the system
-double calculate_PE(GCMC_System *sys)//returns energy in Kelvin
+double calculate_PE(GCMC_System *sys)
 {
-       //printf("CALCULATING POTENTIAL ENERGY...\n");
-	int b, //counter variables
-            c,
-            pool = sys->particles.size();
-	double r,
+        int pool = sys->particles.size();
+	double dist,
 	       pe = 0.00,
-               rinv;
-	double sor6,//powers of sigma over r for the potential equation
-               sor12;
-	double sigma = sys->sigma,
-               epsilon = sys->epsilon;
-
-	for (b = 0; b < pool - 1; b++)
+               inverse_distance,//inverse distance
+	       s_over_d_6,//powers of sigma over dist
+               s_over_d_12;
+	for (int a = 0; a < pool - 1; a++)
 	{
-            for (c = b + 1; c < pool; c++)
+            for (int b = a + 1; b < pool; b++)
             {
-                r = distfinder(sys, b, c);
-                rinv = 1.0 / r;
-                sor12 = pow(sigma,12)*pow(rinv,12); 
-                sor6 = pow(sigma,6)*pow(rinv,6); 
-                pe += 4.0 * epsilon * (sor12 - sor6);
-               //printf("ENERGY r = %lf for particles %d and %d\n",r,b,c);//sor6= %lf\nsor12=%lf\nsigma=%lf\nepsilon=%lf\npe=%lf\n\n",r,sor6,sor12,sigma,epsilon,pe);
+                dist = distfinder(sys, a, b);//in one dimension
+                inverse_distance = 1.0 / dist;
+                s_over_d_12 = pow(sys->sigma,12)*pow(inverse_distance,12); 
+                s_over_d_6 = pow(sys->sigma,6)*pow(inverse_distance,6); 
+                pe += 4.0 * sys->epsilon * (s_over_d_12 - s_over_d_6);
             }
 	}
-       //printf("DONE CALCULATING POTENTIAL ENERGY\n");
-	return pe;
+	return pe;//in KELVIN
 }
 
-//finds distance between every pair of particles for use in 
-//potential calculation
 double distfinder(GCMC_System *sys, int id_a, int id_b)
 {
 	double dist,
                delta,
                delta2 = 0.00,
                cutoff = box_side_length * 0.5;
-        //distance is done coordinate by coordinate
-        //(remember x[0] = x position etc
 
 	for(int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
                 //the following conditionals are the minimum image convention
-                //that make up part of periodic boundary conditions
 		if (delta >= cutoff)
 		{
 			delta -= box_side_length;
@@ -123,13 +109,20 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 	return dist;
 }
 
+//returns a random float between 0 and 1
+double randomish()
+{
+	double r = random();
+	return r / ((double)RAND_MAX + 1);
+}
+
 MoveType make_move(GCMC_System *sys)
 {
-       //printf("ENTERING MAKE_MOVE\n");
+        //MoveType is an enum in MonteCarlo.h 
 	MoveType move;
 	int pool = sys->particles.size();
 
-	if (pool == 0)//if there are 0 particles we must add some to get started
+	if (pool == 0)
 	{
 		create_particle(sys);
 		pool = sys->particles.size();
@@ -140,12 +133,12 @@ MoveType make_move(GCMC_System *sys)
 		double pick = random() % pool,//picks random particle
 		       choice = randomish(); //random float between 0 and 1
 		fflush(stdout);
-		if (choice<(1.0/3.0))
+		if (choice<0.33333)
 		{
 			create_particle(sys);
 			move = CREATE_PARTICLE;
 		}
-		else if (choice >= (2.0/3.0))
+		else if (choice >= (.666667))
 		{
 			move_particle(sys, pick);
 			move = TRANSLATE;
@@ -156,7 +149,6 @@ MoveType make_move(GCMC_System *sys)
 			move = DESTROY_PARTICLE;
 		}
 	}
-       //printf("LEAVING MAKE_MOVE\n");
 	return move;
 }
 
@@ -164,30 +156,30 @@ MoveType make_move(GCMC_System *sys)
 //insert particle at random location
 void create_particle( GCMC_System *sys)
 {
-       //printf("INSERTING A PARTICLE");
-	particle added; //making a struct to push back to the vector
-	added.x[0] = randomish()*box_side_length;
-	added.x[1] = randomish()*box_side_length;
-	added.x[2] = randomish()*box_side_length;
-	sys->particles.push_back(added);
+        //we make a struct of type "particle"
+	particle to_be_inserted; 
+        //we create random coordinates for the particle 
+	to_be_inserted.x[0] = randomish()*box_side_length;
+	to_be_inserted.x[1] = randomish()*box_side_length;
+	to_be_inserted.x[2] = randomish()*box_side_length;
+        //we add the particle to the vector that holds all our particles
+ 	sys->particles.push_back(to_be_inserted);
 	return;
 }
 
 
-//moves a random particle a random distance
+//Displace a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
-       //printf("MOVING A PARTICLE\n");
-        //phi,gamma, and delta are random floats between 0 and L
         double phi = (randomish()-0.5)* box_side_length,
                gamma = (randomish()-0.5)*box_side_length,
                delta = (randomish()-0.5)*box_side_length;
-        // store move in case it needs to be undone
+        //store displacement in case it needs to be undone
         sys->move.pick = pick;
         sys->move.phi = phi;
         sys->move.gamma = gamma;
         sys->move.delta = delta;
-        //make the moves (finally!)
+        //make the moves 
         sys->particles[pick].x[0] += phi;
         sys->particles[pick].x[1] += gamma;
         sys->particles[pick].x[2] += delta;
@@ -206,15 +198,12 @@ void move_particle(GCMC_System *sys, int pick)
 	return;
 }
 
-
 //particle deletion
 void destroy_particle(GCMC_System *sys, int pick)
 {
-       //printf("DESTROYING PARTICLE\n");
 	sys->destroy.phi = sys->particles[pick].x[0];
 	sys->destroy.gamma = sys->particles[pick].x[1];
 	sys->destroy.delta = sys->particles[pick].x[2];
-       //printf("DESTROY PARTICLE\n PHI = %lf \nGAMMA = %lf\nDELTA=%lf\n",sys->destroy.phi,sys->destroy.gamma,sys->destroy.delta);
         //"begin" (below) points to the address of the zeroth item 
 	// we move forward "pick" addresses 
 	// to get to the address of the item we want
@@ -222,75 +211,53 @@ void destroy_particle(GCMC_System *sys, int pick)
         return;
 }
 
-//returns a random float between 0 and 1
-double randomish()
-{
-	double r = random();
-	return r / ((double)RAND_MAX + 1);
-}
 
 bool move_accepted(double cpe, double npe, MoveType move_type,\
-                   GCMC_System *sys,int step)
+                   GCMC_System *sys)
 {
         double delta = npe - cpe,
-               random = randomish(),
                e = M_E,
                beta = 1.0 / (k * sys->system_temp),//thermodynamic beta
-               volume = box_side_length * box_side_length *\
-                        box_side_length;
-        double boltzmann_factor = pow(e,(-beta*delta)),
+               volume = pow(box_side_length,3),
+               boltzmann_factor = pow(e,(-beta*delta)),
                acceptance;
 	int pool = sys->particles.size(),
-            poolplus = pool + 1;//size of the system AFTER particle insertion 
-       //printf("ENTERING MOVE ACCEPTED\n");
-	if (move_type == TRANSLATE )//if we MOVED a particle 
+            poolplus = pool + 1;
+	if (move_type == TRANSLATE )
 	{
                 acceptance = boltzmann_factor;
-		if (acceptance > random)
+		if (acceptance > randomish())
 		{
-                       /*printf("Accepted TRANSLATION\
-                                in step %d\nCPE= %lf\nNPE=%lf\n\n\
-                                boltzmann = %lf\n",step,cpe,npe,boltzmann_factor);*/
 			return true;
 		}
 		else
 		{
-                       //printf("Rejected TRANSLATION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
-	else if (move_type == CREATE_PARTICLE)//if we CREATED a particle
+	else if (move_type == CREATE_PARTICLE)
 	{
-                acceptance = volume*conv_factor/(sys->system_temp*\
-                            (double)pool)*boltzmann_factor;
-		if (acceptance > random)
+                acceptance = boltzmann_factor* volume * conv_factor / \
+                             (sys->system_temp * (double)pool);
+		if (acceptance > randomish())
 		{
-                       /*printf("Accepted INSERTION in step %d\nCPE=\
-                                %lf\nNPE=%lf\n\n\
-                                boltzmann = %lf\n\
-                                acceptance = %lf\n",step,cpe,npe,boltzmann_factor,acceptance);*/
 			return true;
 		}
 		else
 		{
-                       //printf("Rejected INSERTION in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
-                acceptance = boltzmann_factor*sys->system_temp*(double)poolplus/(volume*\
-                        conv_factor);
-		if (acceptance > random)
+                acceptance = boltzmann_factor * sys->system_temp * \
+                             (double)poolplus / (volume * conv_factor);
+		if (acceptance > randomish())
 		{
-                       /*printf("Accepted REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n\
-                                boltzmann=%lf\n\
-                                acceptance=%lf\n",step,cpe,npe,boltzmann_factor,acceptance);*/
 			return true;
 		}
 		else
 		{
-                       //printf("rejected REMOVAL in step %d\nCPE= %lf\nNPE=%lf\n\n",step,cpe,npe);
 			return false;
 		}
 	}
@@ -321,7 +288,6 @@ void undo_move(GCMC_System *sys, MoveType move)
 
 void undo_insertion(GCMC_System *sys)
 {
-   //printf("UNDOING INSERTION\n");
     sys->particles.pop_back();
 }
 
@@ -351,40 +317,11 @@ void unmove_particle(GCMC_System *sys)
 	return;
 }
 
-
-// if any particle tries to escape the box, it disappears
-// and is replaced on the opposite side of the box
-// by a more obedient particle
-bool positionchecker(GCMC_System *sys, int particleID )
-{
-	for (int i = 0; i<3; i++)
-	{
-		if (sys->particles[particleID].x[i] >= box_side_length)
-		{
-			sys->particles[particleID].x[i] -= box_side_length;
-			return false;
-		}
-		else if (sys->particles[particleID].x[i] < 0)
-		{
-			sys->particles[particleID].x[i] += box_side_length;
-			return false;
-		}
-	}
-	return true;
-}
-
-
-
-
-
-
 double sphere_volume(GCMC_System *sys,double diameter)
 {
-        diameter = diameter*sys->BinSize;
-	double radius = diameter / 2.0;//this is important
-
+        diameter = diameter*sys->BinSize;//weighting
+	double radius = diameter / 2.0;//this is important!
         double	volume = (4.0 / 3.0) * M_PI * radius * radius * radius;
-       // printf("volume of sphere with radius %lf = %lf\n",radius, volume);
         return volume;
 }
 
@@ -399,60 +336,50 @@ void radialDistribution(GCMC_System *sys,int step)
                 volume= box_side_length*box_side_length*box_side_length,
 		num_density = n / volume,
 		expected_number_of_particles,
-		current_shell,
-		previous_shell,
-		shell_volume_delta,
+		diameter_of_current_sphere,
+	        diameter_of_previous_sphere,
+		shell_volume,
 		dist;
 	for (int I = 0; I<n - 1; I++)
 	{
 		for (int K = I + 1; K<n; K++)
 		{
                     dist = distfinder(sys, I, K);
-                   //printf("RADIAL r = %lf for particles %d and %d\n",dist,I,K);
                     IK = int(dist / BinSize);
                     sys->boxes[IK] += 2;
 		}
 	}
-	previous_shell = 0;
+	diameter_of_previous_sphere = 0;
         if(step==sys->maxStep-1)
         {
             for (int I = 1; I <= nBins; I++)
             {
                    //printf("number of particles = %d\n",n);
                     sys->boxes[I-1] /= sys->maxStep/2.; 
-                    fprintf(sys->unweightedradial, "%lf     %lf\n",BinSize*(I-1),\
+                    fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
-                    current_shell = I;
-                    shell_volume_delta = (sphere_volume(sys,current_shell) -\
-                                          sphere_volume(sys,previous_shell));
-                   //printf("Number density = %lf\n",num_density);
-                    expected_number_of_particles = shell_volume_delta * num_density;
-                   //printf("expected_number_of_particles = %lf\n",expected_number_of_particles);
-                   //printf("unweighted boxes = %lf",sys->boxes[I-1]);
+                    diameter_of_current_sphere = I;
+                    shell_volume = sphere_volume(sys,diameter_of_current_sphere)
+                               - sphere_volume(sys,diameter_of_previous_sphere);
+                    expected_number_of_particles = shell_volume * num_density;
                     sys->boxes[I - 1] /= expected_number_of_particles;
-                   //printf("weighted boxes = %lf",sys->boxes[I-1]);
-                    fprintf(sys->weightedradial, "%lf     %lf\n",BinSize*(I-1),\
-                            
+                    fprintf(sys->weightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
-                    previous_shell = current_shell;
+                    diameter_of_previous_sphere++;//update sphere diameter
             }
         }
-       //printf("LEAVING RADIAL DIST FUNCTION\n");
 	return;
 }
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        if(sys->energies == NULL ||\
-           sys->positions ==NULL || \
-           sys->particlecount == NULL)
+        if(sys->energies == NULL || sys->positions ==NULL\
+           || sys->particlecount == NULL)
         {
             printf("File pointers in output are null!\n");
             exit(EXIT_FAILURE);
         }
-	int p,
-            pool;
-	pool = sys->particles.size();
+	int pool = sys->particles.size();
         char water[] = "Water",
              oxygen[] = "O";
         if(strcmp(sys->particle_type,water)==0)
@@ -464,12 +391,13 @@ void output(GCMC_System *sys, double accepted_energy, int step)
             return;
         }
 	fprintf(sys->positions, "%d \n\n", pool);
-	for (p = 0; p<pool; p++)
+	for (int p = 0; p<pool; p++)
 	{
 		fprintf(sys->positions, "%s %lf %lf %lf\n",\
                         sys->particle_type, sys->particles[p].x[0],\
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
+
         double average_num_particles = sys->sumparticles/step;
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
 
@@ -478,4 +406,3 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         fprintf(sys->average_energies, "%d %lf\n",step,average_energy);
 	return;
 }
-
