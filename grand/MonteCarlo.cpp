@@ -74,8 +74,11 @@ double calculate_PE(GCMC_System *sys)
             {
                 dist = distfinder(sys, a, b);//in one dimension
                 inverse_distance = 1.0 / dist;
-                s_over_d_12 = pow(sys->sigma,12)*pow(inverse_distance,12); 
-                s_over_d_6 = pow(sys->sigma,6)*pow(inverse_distance,6); 
+                double dist_squared = inverse_distance*inverse_distance,
+                       dist_sixth = dist_squared*dist_squared*dist_squared,
+                       dist_twelfth = dist_sixth*dist_squared;
+                s_over_d_12 = sys->sigma_twelfth * dist_twelfth; 
+                s_over_d_6 = sys->sigma_sixth * dist_sixth; 
                 pe += 4.0 * sys->epsilon * (s_over_d_12 - s_over_d_6);
             }
 	}
@@ -218,7 +221,7 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
         double delta = npe - cpe,
                e = M_E,
                beta = 1.0 / (k * sys->system_temp),//thermodynamic beta
-               volume = pow(box_side_length,3),
+               volume = sys->volume,
                boltzmann_factor = pow(e,(-beta*delta)),
                acceptance;
 	int pool = sys->particles.size(),
@@ -332,7 +335,7 @@ void radialDistribution(GCMC_System *sys,int step)
 	int IK,
             n = sys->particles.size();
 	double  BinSize = sys->BinSize,
-                volume= box_side_length*box_side_length*box_side_length,
+                volume= sys->volume,
 		num_density = n / volume,
 		expected_number_of_particles,
 		diameter_of_current_sphere,

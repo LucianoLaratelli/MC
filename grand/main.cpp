@@ -24,7 +24,13 @@ int main(int argc, char *argv[])
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
 
     input(&sys);//set particle type
+    sys.sigma_squared = sys.sigma*sys.sigma;
+    sys.sigma_sixth = sys.sigma_squared * sys.sigma_squared * sys.sigma_squared;
+    sys.sigma_twelfth = sys.sigma_sixth * sys.sigma_squared;
+
     srandom(time(NULL));//seed for random is current time
+
+    sys.volume = box_side_length * box_side_length * box_side_length;
 
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");

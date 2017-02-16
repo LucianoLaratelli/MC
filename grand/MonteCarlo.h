@@ -40,13 +40,17 @@ typedef struct _GCMC_System
 	removal_data destroy;
         //Lennard-Jones parameters
 	double sigma,
+               sigma_squared,
+               sigma_sixth,
+               sigma_twelfth,
 	       epsilon,
                particle_mass;
         char particle_type[25];
         //system variables
         double system_temp,
                cutoff;
-        int    maxStep;
+        int    maxStep,
+               volume;
         //for averaging
         double sumparticles,
                sumenergy;
