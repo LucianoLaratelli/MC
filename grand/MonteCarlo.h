@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <random>
 #include <stdlib.h>
+#include <time.h>
 #include <string.h>
 
 #ifndef MONTE_CARLO_H
@@ -50,9 +51,10 @@ typedef struct _GCMC_System
         double sumparticles,
                sumenergy;
         //next three lines are for radial distribution function
-        static constexpr int nBins = box_side_length/.25;
-        double BinSize = box_side_length/(double)nBins;//each bin is .25 Angs.
+        static constexpr int nBins = 400; 
+        double BinSize = .25; 
         double boxes[nBins] = {0};
+        clock_t start_time;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };

@@ -371,6 +371,12 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
+        double time_till_now = (double)(clock()-sys->start_time)/CLOCKS_PER_SEC; 
+        if(sys->maxStep % step == 0)
+        {
+            printf("%.3lf %% of the way done! Time to this point: %.3lf\n",\
+                    ((double)step/sys->maxStep)*100, time_till_now);
+        }
 	int pool = sys->particles.size();
         char water[] = "Water",
              oxygen[] = "O";
@@ -393,7 +399,6 @@ void output(GCMC_System *sys, double accepted_energy, int step)
 
         double average_num_particles = sys->sumparticles/step;
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
-        printf("average_num_particles = %lf\n",average_num_particles);
         
         double average_energy = sys->sumenergy/step;
         fprintf(sys->energies, "%d %lf\n",step,accepted_energy);

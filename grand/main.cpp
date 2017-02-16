@@ -1,4 +1,3 @@
-
 #include "MonteCarlo.h"
 
 int main(int argc, char *argv[])
@@ -47,6 +46,10 @@ int main(int argc, char *argv[])
         exit(EXIT_FAILURE);
     }
 
+    sys.start_time = clock();
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("BEGINNING MONTE CARLO RUN\n");
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     currentPE = calculate_PE(&sys);//energy at first step 
     fprintf(sys.energies, "0 %lf\n", currentPE);
 
@@ -86,8 +89,11 @@ int main(int argc, char *argv[])
                     }
             }
     }
+    double cycles_till_now = (double)(clock()-sys.start_time),
+           time_till_now = cycles_till_now/CLOCKS_PER_SEC;
 
-    printf("Run complete! Have a nice day.\n");//always good to have manners
+    printf("This run took %lf seconds.\n Have a nice day!\n"\
+            ,time_till_now);//always good to have manners
 
     fclose(sys.positions);
     fclose(sys.energies);
