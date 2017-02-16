@@ -51,9 +51,9 @@ int main(int argc, char *argv[])
     }
 
     sys.start_time = clock();
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    printf("BEGINNING MONTE CARLO RUN\n");
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("|                      STARTING  GCMC                      |\n");
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     currentPE = calculate_PE(&sys);//energy at first step 
     fprintf(sys.energies, "0 %lf\n", currentPE);
 
@@ -71,9 +71,9 @@ int main(int argc, char *argv[])
             {
                 double cycles_till_now = (double)(clock()-sys.start_time),
                        time_till_now = cycles_till_now/CLOCKS_PER_SEC;
-                printf("%.0f%% complete. Time to this point: %lf\n",\
-                        ((double)step/(double)sys.maxStep)*100,\
-                        time_till_now);
+                printf("%.0f%% of iteration steps done. Time elapsed:"\
+                        " %.2lf seconds.\n",\
+                        ((double)step/(double)sys.maxStep)*100, time_till_now);
             }
             if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     double cycles_till_now = (double)(clock()-sys.start_time),
            time_till_now = cycles_till_now/CLOCKS_PER_SEC;
 
-    printf("100%% complete!This run took %lf seconds.\n Have a nice day!\n"\
+    printf("\n100%% complete!\nThis run took %f seconds.\n\nHave a nice day!\n"\
             ,time_till_now);//always good to have manners
 
     fclose(sys.positions);

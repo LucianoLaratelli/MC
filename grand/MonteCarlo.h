@@ -38,12 +38,12 @@ typedef struct _GCMC_System
 	translational_data move;
 	removal_data destroy;
         //Lennard-Jones parameters
-	double sigma,
-               sigma_squared,
+	double epsilon,
+               particle_mass,
+               sigma,
+               sigma_squared,//powers of sigma for PE
                sigma_sixth,
-               sigma_twelfth,
-	       epsilon,
-               particle_mass;
+               sigma_twelfth;
         char particle_type[25];
         //system variables
         double system_temp,
