@@ -51,7 +51,7 @@ typedef struct _GCMC_System
         double sumparticles,
                sumenergy;
         //next three lines are for radial distribution function
-        static constexpr int nBins = 400; 
+        static const int nBins = 400; 
         double BinSize = .25; 
         double boxes[nBins] = {0};
         clock_t start_time;
