@@ -333,7 +333,6 @@ double sphere_volume(GCMC_System *sys,double diameter)
 
 void radialDistribution(GCMC_System *sys,int step)
 {
-        printf("ENTERING G(R)\n");
 	const int nBins = sys->nBins; //total number of bins
 	int IK,
             n = sys->particles.size();
