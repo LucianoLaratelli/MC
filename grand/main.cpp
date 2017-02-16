@@ -71,12 +71,12 @@ int main(int argc, char *argv[])
                         move_type, &sys))
             {
                     n = sys.particles.size();
-                    output(&sys,newPE,step);
                     currentPE = newPE;//updates energy
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step > step*0.5)//allow system to equilibrate before g(r)
+                    if(step > step*0.5)//allow system to equilibrate
                     {
+                        output(&sys,newPE,step);
                         radialDistribution(&sys,step);
                     }
             }
@@ -87,8 +87,9 @@ int main(int argc, char *argv[])
                     output(&sys,currentPE,step);
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step > step*0.5)
+                    if(step > step*0.5)//allow system to equilibrate
                     {
+                        output(&sys,newPE,step);
                         radialDistribution(&sys,step);
                     }
             }
