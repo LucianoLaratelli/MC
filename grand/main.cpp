@@ -67,6 +67,11 @@ int main(int argc, char *argv[])
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
+            if(step % sys.maxStep/10 == 0)
+            {
+                printf("Still alive! %lf%% of the way\
+                        there.\n",(double)(step/sys.maxStep)*100);
+            }
             if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
             {
@@ -74,7 +79,7 @@ int main(int argc, char *argv[])
                     currentPE = newPE;//updates energy
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step >= sys.maxStep*0.5)//allow system to equilibrate
+                    if(step >= sys.maxStep*0.5 && step % 2 == 0)
                     {
                         output(&sys,newPE,step);
                         radialDistribution(&sys,step);
@@ -86,7 +91,7 @@ int main(int argc, char *argv[])
                     n = sys.particles.size();
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step >= sys.maxStep*0.5)//allow system to equilibrate
+                    if(step >= sys.maxStep*0.5 && step % 2 == 0) 
                     {
                         output(&sys,currentPE,step);
                         radialDistribution(&sys,step);
