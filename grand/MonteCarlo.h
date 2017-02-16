@@ -31,10 +31,9 @@ typedef struct _GCMC_System
 {
         FILE * positions;
         FILE * energies;
-        FILE * unweightedradial;
+        //FILE * unweightedradial;
         FILE * weightedradial;
         FILE * particlecount;
-        FILE * average_energies;
 	std::vector <particle> particles;
 	translational_data move;
 	removal_data destroy;

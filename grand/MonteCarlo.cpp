@@ -356,9 +356,9 @@ void radialDistribution(GCMC_System *sys,int step)
         {
             for (int I = 1; I <= nBins; I++)
             {
-                    sys->boxes[I-1] /= sys->maxStep; 
-                    fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
-                            sys->boxes[I - 1]);
+                    sys->boxes[I-1] /= sys->maxStep/2; 
+                    /*fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
+                            sys->boxes[I - 1]);*/
                     diameter_of_current_sphere = I;
                     shell_volume = sphere_volume(sys,diameter_of_current_sphere)
                                - sphere_volume(sys,diameter_of_previous_sphere);
@@ -410,7 +410,7 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
         
         double average_energy = sys->sumenergy/step;
-        fprintf(sys->energies, "%d %lf\n",step,accepted_energy);
-        fprintf(sys->average_energies, "%d %lf\n",step,average_energy);
+        fprintf(sys->energies, "%d %lf\
+                %lf\n",step,accepted_energy,average_energy);
 	return;
 }

@@ -34,17 +34,15 @@ int main(int argc, char *argv[])
 
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");
-    sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
+    //sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
     sys.particlecount = fopen("particlecount.dat", "w");
-    sys.average_energies = fopen("average_energy.dat","w");
 
     if(sys.positions == NULL|| \
        sys.energies == NULL|| \
-       sys.unweightedradial == NULL|| \
+       /*sys.unweightedradial == NULL|| \*/
        sys.weightedradial == NULL|| \
-       sys.particlecount == NULL|| \
-       sys.average_energies == NULL)
+       sys.particlecount == NULL) 
     {
         printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
         printf("Error! One of the file pointers in main() is broken!\n");
@@ -103,10 +101,9 @@ int main(int argc, char *argv[])
 
     fclose(sys.positions);
     fclose(sys.energies);
-    fclose(sys.unweightedradial);
+    //fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
     fclose(sys.particlecount);
-    fclose(sys.average_energies);
 
     return 0;
 }
