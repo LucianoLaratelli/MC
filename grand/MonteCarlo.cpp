@@ -353,7 +353,7 @@ void radialDistribution(GCMC_System *sys,int step)
         {
             for (int I = 1; I <= nBins; I++)
             {
-                    sys->boxes[I-1] /= sys->maxStep/2.; 
+                    sys->boxes[I-1] /= sys->maxStep; 
                     fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
                     diameter_of_current_sphere = I;
@@ -377,6 +377,12 @@ void output(GCMC_System *sys, double accepted_energy, int step)
             printf("%.3lf %% of the way done! Time to this point: %.3lf\n",\
                     ((double)step/sys->maxStep)*100, time_till_now);
         }
+        if(step == sys->maxStep*.75)
+        {
+            printf("75 %% of the way done! Time to this point: %.3lf\n",\
+                     time_till_now);
+        }
+
 	int pool = sys->particles.size();
         char water[] = "Water",
              oxygen[] = "O";
