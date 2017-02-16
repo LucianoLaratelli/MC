@@ -46,6 +46,8 @@ void input(GCMC_System *sys)
    //water is for Stockmeyer fluids only
    else if(strcmp(particle_type,water) == 0)
    {
+       char oxygen[] = "O";
+       strcpy(sys->particle_type,oxygen);
        sys->sigma = 3.15100;
        sys->epsilon = 76.42000;
        sys->particle_mass = 18.016;
@@ -374,25 +376,15 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        double time_till_now = (double)(clock()-sys->start_time)/CLOCKS_PER_SEC; 
-        if(sys->maxStep % step == 0)
+        if(step == .5*sys->maxStep || step==.75*sys->maxStep)
         {
-            printf("%.3lf %% of the way done! Time to this point: %.3lf\n",\
+            double time_till_now = (double)(clock()-sys->start_time)/\
+                                   CLOCKS_PER_SEC; 
+            printf("%.0lf%% of the way done! Time to this point: %.3lf\n",\
                     ((double)step/sys->maxStep)*100, time_till_now);
-        }
-        if(step == sys->maxStep*.75)
-        {
-            printf("75 %% of the way done! Time to this point: %.3lf\n",\
-                     time_till_now);
         }
 
 	int pool = sys->particles.size();
-        char water[] = "Water",
-             oxygen[] = "O";
-        if(strcmp(sys->particle_type,water)==0)
-        {
-            strcpy(sys->particle_type,oxygen);
-        }
         if(pool==0)
         {
             return;

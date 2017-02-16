@@ -67,14 +67,14 @@ int main(int argc, char *argv[])
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
-            if( move_accepted(currentPE, newPE,\
+            if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
             {
                     n = sys.particles.size();
                     currentPE = newPE;//updates energy
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step > step*0.5)//allow system to equilibrate
+                    if(step >= sys.maxStep*0.5)//allow system to equilibrate
                     {
                         output(&sys,newPE,step);
                         radialDistribution(&sys,step);
@@ -84,12 +84,11 @@ int main(int argc, char *argv[])
             {
                     undo_move(&sys, move_type);
                     n = sys.particles.size();
-                    output(&sys,currentPE,step);
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step > step*0.5)//allow system to equilibrate
+                    if(step >= sys.maxStep*0.5)//allow system to equilibrate
                     {
-                        output(&sys,newPE,step);
+                        output(&sys,currentPE,step);
                         radialDistribution(&sys,step);
                     }
             }
