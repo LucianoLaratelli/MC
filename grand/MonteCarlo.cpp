@@ -376,14 +376,6 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
-        if(step == .5*sys->maxStep || step==.75*sys->maxStep)
-        {
-            double time_till_now = (double)(clock()-sys->start_time)/\
-                                   CLOCKS_PER_SEC; 
-            printf("%.0lf%% of the way done! Time to this point: %.3lf\n",\
-                    ((double)step/sys->maxStep)*100, time_till_now);
-        }
-
 	int pool = sys->particles.size();
         if(pool==0)
         {

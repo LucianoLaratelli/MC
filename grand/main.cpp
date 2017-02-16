@@ -67,10 +67,13 @@ int main(int argc, char *argv[])
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
-            if(step % sys.maxStep/10 == 0)
+            if(step % (sys.maxStep/10) == 0)
             {
-                printf("Still alive! %lf%% of the way\
-                        there.\n",(double)(step/sys.maxStep)*100);
+                double cycles_till_now = (double)(clock()-sys.start_time),
+                       time_till_now = cycles_till_now/CLOCKS_PER_SEC;
+                printf("%.0f%% complete. Time to this point: %lf\n",\
+                        ((double)step/(double)sys.maxStep)*100,\
+                        time_till_now);
             }
             if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
@@ -101,7 +104,7 @@ int main(int argc, char *argv[])
     double cycles_till_now = (double)(clock()-sys.start_time),
            time_till_now = cycles_till_now/CLOCKS_PER_SEC;
 
-    printf("This run took %lf seconds.\n Have a nice day!\n"\
+    printf("100%% complete!This run took %lf seconds.\n Have a nice day!\n"\
             ,time_till_now);//always good to have manners
 
     fclose(sys.positions);
