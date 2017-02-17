@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
 
+    sys.boxes = calloc(sys->nBins*sizeof(double);
     input(&sys);//set particle type
     sys.sigma_squared = sys.sigma*sys.sigma;
     sys.sigma_sixth = sys.sigma_squared * sys.sigma_squared * sys.sigma_squared;
@@ -79,21 +80,26 @@ int main(int argc, char *argv[])
                         move_type, &sys))
             {
                     currentPE = newPE;//updates energy
-                    n = sys.particles.size();
                     sys.sumenergy += newPE;
-                    sys.sumparticles += n;
                     //output(&sys,newPE,step);
-                    radialDistribution(&sys,step);
+                    if(step==sys.maxStep*.5)
+                    {
+                        n = sys.particles.size();
+                        sys.sumparticles += n;
+                        radialDistribution(&sys,step);
+                    }
             }
             else // Move rejected
             {
                     undo_move(&sys, move_type);
-                    n = sys.particles.size();
                     sys.sumenergy += currentPE;
-                    sys.sumparticles += n;
                     //output(&sys,currentPE,step);
-                    radialDistribution(&sys,step);
-                    
+                    if(step==sys.maxStep*.5)
+                    {
+                        n = sys.particles.size();
+                        sys.sumparticles += n;
+                        radialDistribution(&sys,step);
+                    }
             }
     }
     double cycles_till_now = (double)(clock()-sys.start_time),
@@ -104,6 +110,7 @@ int main(int argc, char *argv[])
     printf("  This run took %f seconds.\nHave a nice day!\n"\
             ,time_till_now);//always good to have manners
 
+    free(sys.boxes);
     fclose(sys.positions);
     fclose(sys.energies);
     fclose(sys.unweightedradial);
