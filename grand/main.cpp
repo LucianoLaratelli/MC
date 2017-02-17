@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
     sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
 
-    sys.boxes = calloc(sys->nBins*sizeof(double);
+    sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
     input(&sys);//set particle type
     sys.sigma_squared = sys.sigma*sys.sigma;
     sys.sigma_sixth = sys.sigma_squared * sys.sigma_squared * sys.sigma_squared;
