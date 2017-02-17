@@ -25,13 +25,13 @@ typedef struct _removal_data
 	double phi, gamma, delta;
 } removal_data;
 
-const int box_side_length = 100;
+const int box_side_length = 30;
 
 typedef struct _GCMC_System
 {
         FILE * positions;
         FILE * energies;
-        //FILE * unweightedradial;
+        FILE * unweightedradial;
         FILE * weightedradial;
         FILE * particlecount;
 	std::vector <particle> particles;
@@ -54,7 +54,7 @@ typedef struct _GCMC_System
         double sumparticles,
                sumenergy;
         //next three lines are for radial distribution function
-        static const int nBins = 400; 
+        static const int nBins = 120; 
         double BinSize = .25; 
         double boxes[nBins] = {0};
         clock_t start_time;

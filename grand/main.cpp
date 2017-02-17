@@ -34,13 +34,13 @@ int main(int argc, char *argv[])
 
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");
-    //sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
+    sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
     sys.particlecount = fopen("particlecount.dat", "w");
 
     if(sys.positions == NULL|| \
        sys.energies == NULL|| \
-       /*sys.unweightedradial == NULL|| \*/
+       sys.unweightedradial == NULL|| \
        sys.weightedradial == NULL|| \
        sys.particlecount == NULL) 
     {
@@ -58,9 +58,9 @@ int main(int argc, char *argv[])
     fprintf(sys.energies, "0 %lf\n", currentPE);
 
     n = sys.particles.size(); //particle count 
-
     sys.sumenergy = currentPE;
     sys.sumparticles = n;
+    sys.cutoff = box_side_length * .5;
 
     for(step = 1; step<sys.maxStep; step++)
     {
@@ -71,22 +71,19 @@ int main(int argc, char *argv[])
             {
                 double cycles_till_now = (double)(clock()-sys.start_time),
                        time_till_now = cycles_till_now/CLOCKS_PER_SEC;
-                printf("%.0f%% of iteration steps done. Time elapsed:"\
+                printf("  %.0f%% of iteration steps done. Time elapsed:"\
                         " %.2lf seconds.\n",\
                         ((double)step/(double)sys.maxStep)*100, time_till_now);
             }
             if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
             {
-                    n = sys.particles.size();
                     currentPE = newPE;//updates energy
-                    sys.sumenergy += currentPE;
+                    n = sys.particles.size();
+                    sys.sumenergy += newPE;
                     sys.sumparticles += n;
-                    if(step >= sys.maxStep*0.5 && step % 2 == 0)
-                    {
-                        output(&sys,newPE,step);
-                        radialDistribution(&sys,step);
-                    }
+                    //output(&sys,newPE,step);
+                    radialDistribution(&sys,step);
             }
             else // Move rejected
             {
@@ -94,22 +91,22 @@ int main(int argc, char *argv[])
                     n = sys.particles.size();
                     sys.sumenergy += currentPE;
                     sys.sumparticles += n;
-                    if(step >= sys.maxStep*0.5 && step % 2 == 0) 
-                    {
-                        output(&sys,currentPE,step);
-                        radialDistribution(&sys,step);
-                    }
+                    //output(&sys,currentPE,step);
+                    radialDistribution(&sys,step);
+                    
             }
     }
     double cycles_till_now = (double)(clock()-sys.start_time),
            time_till_now = cycles_till_now/CLOCKS_PER_SEC;
-
-    printf("\n100%% complete!\nThis run took %f seconds.\n\nHave a nice day!\n"\
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("|                      GCMC  COMPLETE                      |\n");
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("  This run took %f seconds.\nHave a nice day!\n"\
             ,time_till_now);//always good to have manners
 
     fclose(sys.positions);
     fclose(sys.energies);
-    //fclose(sys.unweightedradial);
+    fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
     fclose(sys.particlecount);
 

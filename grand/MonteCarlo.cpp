@@ -91,18 +91,17 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 {
 	double dist,
                delta,
-               delta2 = 0.00,
-               cutoff = box_side_length * 0.5;
+               delta2 = 0.00;
 
 	for(int i = 0; i<3; i++)
 	{
 		delta = sys->particles[id_a].x[i] - sys->particles[id_b].x[i];
                 //the following conditionals are the minimum image convention
-		if (delta >= cutoff)
+		if (delta >= sys->cutoff)
 		{
 			delta -= box_side_length;
 		}
-		else if (delta <= -cutoff)
+		else if (delta <= -sys->cutoff)
 		{
 			delta += box_side_length;
 		}
@@ -325,9 +324,8 @@ void unmove_particle(GCMC_System *sys)
 double sphere_volume(GCMC_System *sys,double diameter)
 {
         diameter = diameter*sys->BinSize;//weighting
-	double radius = diameter / 2.0;//this is important!
-        double	volume = (4.0 / 3.0) * M_PI * radius * radius * radius;
-        return volume;
+	double radius = diameter;//this is important!
+        return (4.0 / 3.0) * M_PI * radius * radius * radius;
 }
 
 
@@ -335,10 +333,9 @@ void radialDistribution(GCMC_System *sys,int step)
 {
 	const int nBins = sys->nBins; //total number of bins
 	int IK,
-            n = sys->particles.size();
+            n = sys->particles.size(),
+            num_pairs = 0;
 	double  BinSize = sys->BinSize,
-                volume= sys->volume,
-		num_density = n / volume,
 		expected_number_of_particles,
 		diameter_of_current_sphere,
 	        diameter_of_previous_sphere,
@@ -349,23 +346,31 @@ void radialDistribution(GCMC_System *sys,int step)
 		for (int K = I + 1; K<n; K++)
 		{
                     dist = distfinder(sys, I, K);
+                    if(dist>sys->cutoff)
+                    {
+                        continue;
+                    }
                     IK = int(dist / BinSize);
+                    num_pairs+=1;
                     sys->boxes[IK] += 2;
 		}
 	}
 	diameter_of_previous_sphere = 0;
-        if(step==sys->maxStep-2)
+        
+        if(step==sys->maxStep-1)
         {
+            double real_density_hours = (sys->sumparticles/sys->maxStep)/sys->volume;
             for (int I = 1; I <= nBins; I++)
             {
-                    sys->boxes[I-1] /= sys->maxStep/2; 
-                    /*fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
-                            sys->boxes[I - 1]);*/
+                    sys->boxes[I-1] /=  (sys->maxStep);
+                    sys->boxes[I-1] /= sys->sumparticles/sys->maxStep;
+                    fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
+                            sys->boxes[I - 1]);
                     diameter_of_current_sphere = I;
                     shell_volume = sphere_volume(sys,diameter_of_current_sphere)
                                - sphere_volume(sys,diameter_of_previous_sphere);
-                    expected_number_of_particles = shell_volume * num_density;
-                    sys->boxes[I - 1] /= expected_number_of_particles;
+                    expected_number_of_particles = shell_volume * real_density_hours;
+                    sys->boxes[I - 1] /= (expected_number_of_particles);
                     fprintf(sys->weightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
                     diameter_of_previous_sphere++;//update sphere diameter
@@ -390,7 +395,7 @@ void output(GCMC_System *sys, double accepted_energy, int step)
                         sys->particles[p].x[1], sys->particles[p].x[2]);
 	}
 
-        double average_num_particles = sys->sumparticles/step;
+        double average_num_particles = sys->sumparticles/(step);
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
         
         double average_energy = sys->sumenergy/step;
