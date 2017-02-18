@@ -11,18 +11,21 @@ int main(int argc, char *argv[])
     double currentPE,
            newPE;
 
-    if (argc != 4)
+    if (argc != 5)
     {
-            printf("This program takes three arguments:\n the type of "\
+            printf("This program takes four arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
+                    "the length of one side of the box,"\
                     " and the desired temperature, in that order.\n");
             exit(EXIT_FAILURE);
     }
 
     sscanf(argv[1], "%s", sys.particle_type);
     sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
-    sscanf(argv[3], "%lf", &sys.system_temp);//kelvin
+    sscanf(argv[3], "%lf", &sys.box_side_length);
+    sscanf(argv[4], "%lf", &sys.system_temp);//kelvin
 
+    sys.nBins = sys.box_side_length/sys.BinSize;
     sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
     input(&sys);//set particle type
     sys.sigma_squared = sys.sigma*sys.sigma;
@@ -30,8 +33,6 @@ int main(int argc, char *argv[])
     sys.sigma_twelfth = sys.sigma_sixth * sys.sigma_squared;
 
     srandom(time(NULL));//seed for random is current time
-
-    sys.volume = box_side_length * box_side_length * box_side_length;
 
     sys.positions = fopen("positions.xyz", "w");
     sys.energies = fopen("energies.dat", "w");
@@ -61,7 +62,8 @@ int main(int argc, char *argv[])
     n = sys.particles.size(); //particle count 
     sys.sumenergy = currentPE;
     sys.sumparticles = n;
-    sys.cutoff = box_side_length * .5;
+    sys.volume = sys.box_side_length * sys.box_side_length * sys.box_side_length;
+    sys.cutoff = sys.box_side_length * .5;
 
     for(step = 1; step<sys.maxStep; step++)
     {

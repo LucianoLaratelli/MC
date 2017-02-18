@@ -99,11 +99,11 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
                 //the following conditionals are the minimum image convention
 		if (delta >= sys->cutoff)
 		{
-			delta -= box_side_length;
+			delta -= sys->box_side_length;
 		}
 		else if (delta <= -sys->cutoff)
 		{
-			delta += box_side_length;
+			delta += sys->box_side_length;
 		}
                 //distance requires sum of squares of distance in each
                 //coordinate direction
@@ -163,9 +163,9 @@ void create_particle( GCMC_System *sys)
         //we make a struct of type "particle"
 	particle to_be_inserted; 
         //we create random coordinates for the particle 
-	to_be_inserted.x[0] = randomish()*box_side_length;
-	to_be_inserted.x[1] = randomish()*box_side_length;
-	to_be_inserted.x[2] = randomish()*box_side_length;
+	to_be_inserted.x[0] = randomish()*sys->box_side_length;
+	to_be_inserted.x[1] = randomish()*sys->box_side_length;
+	to_be_inserted.x[2] = randomish()*sys->box_side_length;
         //we add the particle to the vector that holds all our particles
  	sys->particles.push_back(to_be_inserted);
 	return;
@@ -175,9 +175,9 @@ void create_particle( GCMC_System *sys)
 //Displace a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
-        double phi = (randomish()-0.5)* box_side_length,
-               gamma = (randomish()-0.5)*box_side_length,
-               delta = (randomish()-0.5)*box_side_length;
+        double phi = (randomish()-0.5)* sys->box_side_length,
+               gamma = (randomish()-0.5)*sys->box_side_length,
+               delta = (randomish()-0.5)*sys->box_side_length;
         //store displacement in case it needs to be undone
         sys->move.pick = pick;
         sys->move.phi = phi;
@@ -190,13 +190,13 @@ void move_particle(GCMC_System *sys, int pick)
         //check that the particle hasn't moved out of the box 
         for(int I=0;I<3;I++)
         {
-            if(sys->particles[pick].x[I] > box_side_length)
+            if(sys->particles[pick].x[I] > sys->box_side_length)
             {
-                sys->particles[pick].x[I] -= box_side_length;
+                sys->particles[pick].x[I] -= sys->box_side_length;
             }
             else if(sys->particles[pick].x[I] < 0)
             {
-                sys->particles[pick].x[I] += box_side_length;
+                sys->particles[pick].x[I] += sys->box_side_length;
             }
         }
 	return;
@@ -309,13 +309,13 @@ void unmove_particle(GCMC_System *sys)
         //check the particle is in the box
         for(int I=0;I<3;I++)
         {
-            if(sys->particles[pick].x[I] > box_side_length)
+            if(sys->particles[pick].x[I] > sys->box_side_length)
             {
-                sys->particles[pick].x[I] -= box_side_length;
+                sys->particles[pick].x[I] -= sys->box_side_length;
             }
             else if(sys->particles[pick].x[I] < 0)
             {
-                sys->particles[pick].x[I] += box_side_length;
+                sys->particles[pick].x[I] += sys->box_side_length;
             }
         }
 	return;

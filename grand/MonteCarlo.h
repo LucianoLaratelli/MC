@@ -25,7 +25,6 @@ typedef struct _removal_data
 	double phi, gamma, delta;
 } removal_data;
 
-const int box_side_length = 22;
 
 typedef struct _GCMC_System
 {
@@ -48,6 +47,7 @@ typedef struct _GCMC_System
         //system variables
         double system_temp,
                cutoff;
+        double box_side_length;
         int    maxStep,
                volume;
         //for averaging
@@ -55,7 +55,7 @@ typedef struct _GCMC_System
                sumenergy;
         //next three lines are for radial distribution function
         double BinSize = .1; 
-        int nBins = box_side_length/BinSize ;
+        int nBins;
         double * boxes;
         clock_t start_time;
 } GCMC_System;
