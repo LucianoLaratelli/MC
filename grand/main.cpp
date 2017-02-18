@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
                     currentPE = newPE;//updates energy
                     sys.sumenergy += newPE;
                     //output(&sys,newPE,step);
-                    if(step==sys.maxStep*.5)
+                    if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
                         sys.sumparticles += n;
@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
                     undo_move(&sys, move_type);
                     sys.sumenergy += currentPE;
                     //output(&sys,currentPE,step);
-                    if(step==sys.maxStep*.5)
+                    if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
                         sys.sumparticles += n;

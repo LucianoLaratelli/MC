@@ -25,7 +25,7 @@ typedef struct _removal_data
 	double phi, gamma, delta;
 } removal_data;
 
-const int box_side_length = 30;
+const int box_side_length = 22;
 
 typedef struct _GCMC_System
 {

@@ -359,11 +359,11 @@ void radialDistribution(GCMC_System *sys,int step)
         
         if(step==sys->maxStep-1)
         {
-            double real_density_hours = (sys->sumparticles/sys->maxStep)/sys->volume;
+            double real_density_hours = (sys->sumparticles/(sys->maxStep*.5))/sys->volume;
             for (int I = 1; I <= nBins; I++)
             {
-                    sys->boxes[I-1] /=  (sys->maxStep);
-                    sys->boxes[I-1] /= sys->sumparticles/sys->maxStep;
+                    sys->boxes[I-1] /=  (sys->maxStep*.5);
+                    sys->boxes[I-1] /= sys->sumparticles/(sys->maxStep*.5);
                     fprintf(sys->unweightedradial, "%lf\t%lf\n",BinSize*(I-1),\
                             sys->boxes[I - 1]);
                     diameter_of_current_sphere = I;
