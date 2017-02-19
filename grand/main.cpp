@@ -97,7 +97,10 @@ int main(int argc, char *argv[])
     printf("|                      STARTING  GCMC                      |\n");
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     currentPE = calculate_PE(&sys);//energy at first step 
-    fprintf(sys.energies, "0 %lf\n", currentPE);
+    if(sys.energy_output_flag)
+    {
+        fprintf(sys.energies, "0 %lf\n", currentPE);
+    }
 
     n = sys.particles.size(); //particle count 
     sys.sumenergy = currentPE;
