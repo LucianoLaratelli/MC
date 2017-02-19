@@ -7,17 +7,20 @@ int main(int argc, char *argv[])
     int step,
         n;
     
-
     MoveType move_type;
+
     double currentPE,
            newPE;
 
-    if (argc < 5)
+    if(argc < 5)
     {
             printf("This program takes four arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
                     "the length of one side of the box,"\
                     " and the desired temperature, in that order.\n");
+            printf("It also takes one of two options:\n"\
+                   "-ideal: simulates an ideal gas exactly by setting pe = 0\n"\
+                   "-energy: outputs energy to file\n");
             exit(EXIT_FAILURE);
     }
 
@@ -25,18 +28,21 @@ int main(int argc, char *argv[])
 
     sys.ideal_flag=false;
     sys.energy_output_flag=false;
+    
     //take flags if specified
-    for(int i = 1;i < argc;i++)
+    //no, you can't use both at the same time
+    //if that doesn't make sense, think about what an ideal gas is and what
+    //calculate_pe is calculating
+    for(int i = 1;i < 2;i++)
     {
 
-        /*if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
+        if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
         {
             sys.ideal_flag = true;
             count++;
             break;
         }
-        */
-        if(strcmp(argv[i],"-energy")==0)
+        else if(strcmp(argv[i],"-energy")==0)//output energy
         {
             sys.energy_output_flag = true;
             count++;
@@ -67,13 +73,15 @@ int main(int argc, char *argv[])
     srandom(time(NULL));//seed for random is current time
 
     sys.positions = fopen("positions.xyz", "w");
-    sys.energies = fopen("energies.dat", "w");
+    if(sys.energy_output_flag)
+    {
+        sys.energies = fopen("energies.dat", "w");
+    }
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
     sys.particlecount = fopen("particlecount.dat", "w");
 
     if(sys.positions == NULL|| \
-       sys.energies == NULL|| \
        sys.unweightedradial == NULL|| \
        sys.weightedradial == NULL|| \
        sys.particlecount == NULL) 
@@ -146,7 +154,10 @@ int main(int argc, char *argv[])
 
     free(sys.boxes);
     fclose(sys.positions);
-    fclose(sys.energies);
+    if(sys.energy_output_flag)
+    {
+        fclose(sys.energies);
+    }
     fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
     fclose(sys.particlecount);

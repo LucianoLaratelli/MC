@@ -1,3 +1,29 @@
+Sun Feb 19 00:25:40 2017 -0500, Change how output behaves
+Sat Feb 18 22:19:56 2017 -0500, Add flags to program to make it easier to enable ideal gas behavior or energy/position output
+Sat Feb 18 10:14:37 2017 -0500, Change how radial variables are calculated to make it easier to run simulations at different box sizes
+Fri Feb 17 19:13:52 2017 -0500, Syncing
+Fri Feb 17 17:36:41 2017 -0500, TYBG
+Fri Feb 17 17:30:04 2017 -0500, Dynamically allocating bin size
+Fri Feb 17 15:52:33 2017 -0500, Fixed g(r) thanks to the based man adam himself
+Thu Feb 16 16:38:30 2017 -0500, removing makefile
+Thu Feb 16 16:36:48 2017 -0500, Some aesthetic stuff
+Thu Feb 16 13:46:09 2017 -0500, Left a printf
+Thu Feb 16 13:42:57 2017 -0500, Whoops! Wrong if conditions for g(r)
+Thu Feb 16 13:32:17 2017 -0500, Some timing changes
+Thu Feb 16 13:23:41 2017 -0500, More performance improvements courtesy of adam
+Thu Feb 16 12:07:02 2017 -0500, Fixed a bug in equilibration conditional
+Thu Feb 16 11:32:25 2017 -0500, Trying something out with system equilibration before output
+Thu Feb 16 11:28:00 2017 -0500, More improvements, removes a lot of file output that isn't needed
+Thu Feb 16 11:21:13 2017 -0500, Performance Improvements
+Thu Feb 16 10:31:08 2017 -0500, Add compiler optimization flag to makefile
+Wed Feb 15 22:01:16 2017 -0500, quick fix to g(r)
+Wed Feb 15 20:40:03 2017 -0500, Trying something out to see if it'll work on ITN.
+Wed Feb 15 13:12:07 2017 -0500, Last teeny bit of refactoring
+Wed Feb 15 12:49:25 2017 -0500, Quite a bit of refactoring but should be good for now.
+Wed Feb 15 12:10:31 2017 -0500, Refactor code order to reflect program execution. Remove positionchecker which was made useless by Adam's fixes.
+Wed Feb 15 12:00:45 2017 -0500, Stop passing n as a function parameter; get it from .size() when needed.
+Tue Feb 14 19:26:16 2017 -0500, reverting to old commit
+Tue Feb 14 18:33:38 2017 -0500, Thank god for Adam he fixed this burning pile of shit
 Tue Feb 14 09:44:53 2017 -0500, Fixed bug in RDF weighting
 Mon Feb 13 17:09:22 2017 -0500, changing acceptance conditions
 Mon Feb 13 16:31:29 2017 -0500, Fixed the seg fault! Added all file pointers to GCMC_system. All hail Adam.
@@ -74,3 +100,4 @@ Sat Nov 5 23:15:53 2016 -0400, Seg fault smh
 Sat Nov 5 12:41:42 2016 -0400, updating gitignore
 Sat Nov 5 12:41:12 2016 -0400, Fleshing out the code
 Mon Oct 3 20:01:38 2016 -0400, A new project! This is for a grand-canonical mote carlo simulation; the file “vector” is for me to play around with C++ vectors
+Mon Oct 3 14:39:18 2016 -0400, seed!

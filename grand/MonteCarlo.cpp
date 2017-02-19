@@ -406,7 +406,6 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         double average_num_particles = sys->sumparticles/(step);
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
  */       
-        double average_energy = sys->sumenergy/step;
         fprintf(sys->energies, "%lf \n",accepted_energy);
 	return;
 }
