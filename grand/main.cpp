@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
     //no, you can't use both at the same time
     //if that doesn't make sense, think about what an ideal gas is and what
     //calculate_pe is calculating
-    for(int i = 1;i < 2;i++)
+    for(int i = 1;i < argc;i++)
     {
 
         if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
@@ -46,6 +46,12 @@ int main(int argc, char *argv[])
         {
             sys.energy_output_flag = true;
             count++;
+            break;
+        }
+        else if (strcmp(argv[i],"-positions")==0)
+        {
+            sys.positions_output_flag = true;
+            count ++;
             break;
         }
         else
@@ -72,25 +78,18 @@ int main(int argc, char *argv[])
 
     srandom(time(NULL));//seed for random is current time
 
-    sys.positions = fopen("positions.xyz", "w");
     if(sys.energy_output_flag)
     {
         sys.energies = fopen("energies.dat", "w");
     }
+    if(sys.positions_output_flag)
+    {
+        sys.positions = fopen("positions.xyz", "w");
+    }
+
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
     sys.weightedradial = fopen("weightedradialdistribution.txt", "w");
-    sys.particlecount = fopen("particlecount.dat", "w");
 
-    if(sys.positions == NULL|| \
-       sys.unweightedradial == NULL|| \
-       sys.weightedradial == NULL|| \
-       sys.particlecount == NULL) 
-    {
-        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-        printf("Error! One of the file pointers in main() is broken!\n");
-        printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-        exit(EXIT_FAILURE);
-    }
 
     sys.start_time = clock();
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
@@ -126,7 +125,7 @@ int main(int argc, char *argv[])
             {
                     currentPE = newPE;//updates energy
                     sys.sumenergy += newPE;
-                    output(&sys,newPE,step);
+                    output(&sys,newPE);
                     if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
@@ -138,7 +137,7 @@ int main(int argc, char *argv[])
             {
                     undo_move(&sys, move_type);
                     sys.sumenergy += currentPE;
-                    output(&sys,currentPE,step);
+                    output(&sys,currentPE);
                     if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
@@ -156,14 +155,18 @@ int main(int argc, char *argv[])
             ,time_till_now);//always good to have manners
 
     free(sys.boxes);
-    fclose(sys.positions);
+
+    
     if(sys.energy_output_flag)
     {
         fclose(sys.energies);
     }
+    if(sys.energy_output_flag)
+    {
+        fclose(sys.positions);
+    }
     fclose(sys.unweightedradial);
     fclose(sys.weightedradial);
-    fclose(sys.particlecount);
 
     return 0;
 }

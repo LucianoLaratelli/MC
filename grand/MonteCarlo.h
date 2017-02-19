@@ -32,7 +32,6 @@ typedef struct _GCMC_System
         FILE * energies;
         FILE * unweightedradial;
         FILE * weightedradial;
-        FILE * particlecount;
 	std::vector <particle> particles;
 	translational_data move;
 	removal_data destroy;
@@ -59,7 +58,8 @@ typedef struct _GCMC_System
         double * boxes;
         clock_t start_time;
         bool ideal_flag,
-             energy_output_flag;
+             energy_output_flag,
+             positions_output_flag;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
@@ -91,6 +91,6 @@ void unmove_particle(GCMC_System *sys);
 double sphere_volume(GCMC_System *sys,double diameter);
 void radialDistribution( GCMC_System *sys,int step);
 
-void output(GCMC_System *sys,double accepted_energy , int step);
+void output(GCMC_System *sys,double accepted_energy);
 
 #endif

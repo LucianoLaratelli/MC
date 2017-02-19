@@ -383,29 +383,32 @@ void radialDistribution(GCMC_System *sys,int step)
 	return;
 }
 
-void output(GCMC_System *sys, double accepted_energy, int step)
+void output(GCMC_System *sys, double accepted_energy)
 {
-        if(!sys->energy_output_flag)
+        if(!sys->energy_output_flag || !sys->positions_output_flag)
         {
             return;
         }
-/*	int pool = sys->particles.size();
+        
+	int pool = sys->particles.size();
         if(pool==0)
         {
             return;
         }
 
-	fprintf(sys->positions, "%d \n\n", pool);
-	for (int p = 0; p<pool; p++)
-	{
-		fprintf(sys->positions, "%s %lf %lf %lf\n",\
-                        sys->particle_type, sys->particles[p].x[0],\
-                        sys->particles[p].x[1], sys->particles[p].x[2]);
-	}
-
-        double average_num_particles = sys->sumparticles/(step);
-        fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
- */       
-        fprintf(sys->energies, "%lf \n",accepted_energy);
+        if(sys->positions_output_flag)
+        {
+            fprintf(sys->positions, "%d \n\n", pool);
+            for (int p = 0; p<pool; p++)
+            {
+                    fprintf(sys->positions, "%s %lf %lf %lf\n",\
+                            sys->particle_type, sys->particles[p].x[0],\
+                            sys->particles[p].x[1], sys->particles[p].x[2]);
+            }
+        }
+        if(sys->energy_output_flag)
+        {
+            fprintf(sys->energies, "%lf \n",accepted_energy);
+        }
 	return;
 }
