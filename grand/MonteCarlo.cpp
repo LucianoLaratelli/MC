@@ -389,7 +389,7 @@ void output(GCMC_System *sys, double accepted_energy, int step)
         {
             return;
         }
-	int pool = sys->particles.size();
+/*	int pool = sys->particles.size();
         if(pool==0)
         {
             return;
@@ -405,9 +405,8 @@ void output(GCMC_System *sys, double accepted_energy, int step)
 
         double average_num_particles = sys->sumparticles/(step);
         fprintf(sys->particlecount, "%d %lf\n",step,average_num_particles);
-        
+ */       
         double average_energy = sys->sumenergy/step;
-        fprintf(sys->energies, "%d %lf\
-                %lf\n",step,accepted_energy,average_energy);
+        fprintf(sys->energies, "%lf \n",accepted_energy);
 	return;
 }
