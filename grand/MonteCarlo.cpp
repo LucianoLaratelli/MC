@@ -64,6 +64,10 @@ void input(GCMC_System *sys)
 
 double calculate_PE(GCMC_System *sys)
 {
+        if(sys->ideal_flag)
+        {
+            return 0;
+        }
         int pool = sys->particles.size();
 	double dist,
 	       pe = 0.00,
@@ -381,6 +385,10 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy, int step)
 {
+        if(!sys->energy_output_flag)
+        {
+            return;
+        }
 	int pool = sys->particles.size();
         if(pool==0)
         {

@@ -6,12 +6,13 @@ int main(int argc, char *argv[])
     
     int step,
         n;
+    
 
     MoveType move_type;
     double currentPE,
            newPE;
 
-    if (argc != 5)
+    if (argc < 5)
     {
             printf("This program takes four arguments:\n the type of "\
                     "particle, the desired number of iterations,"\
@@ -20,14 +21,45 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
     }
 
-    sscanf(argv[1], "%s", sys.particle_type);
-    sscanf(argv[2], "%d", &sys.maxStep);//number of iterations
-    sscanf(argv[3], "%lf", &sys.box_side_length);
-    sscanf(argv[4], "%lf", &sys.system_temp);//kelvin
+    int count =1;
+
+    sys.ideal_flag=false;
+    sys.energy_output_flag=false;
+    //take flags if specified
+    for(int i = 1;i < argc;i++)
+    {
+
+        /*if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
+        {
+            sys.ideal_flag = true;
+            count++;
+            break;
+        }
+        */
+        if(strcmp(argv[i],"-energy")==0)
+        {
+            sys.energy_output_flag = true;
+            count++;
+            break;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    sscanf(argv[count], "%s", sys.particle_type);                     count++;
+    sscanf(argv[count], "%d", &sys.maxStep);/*number of iterations*/  count++;
+    sscanf(argv[count], "%lf", &sys.box_side_length);                 count++;
+    sscanf(argv[count], "%lf", &sys.system_temp);//kelvin
+
+    printf("particle type = %s\nmax step = %d\nbox side = %.2lf\ntemp = %.2lf\n",sys.particle_type,sys.maxStep,sys.box_side_length,sys.system_temp);
 
     sys.nBins = sys.box_side_length/sys.BinSize;
     sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
+
     input(&sys);//set particle type
+
     sys.sigma_squared = sys.sigma*sys.sigma;
     sys.sigma_sixth = sys.sigma_squared * sys.sigma_squared * sys.sigma_squared;
     sys.sigma_twelfth = sys.sigma_sixth * sys.sigma_squared;
@@ -83,7 +115,7 @@ int main(int argc, char *argv[])
             {
                     currentPE = newPE;//updates energy
                     sys.sumenergy += newPE;
-                    //output(&sys,newPE,step);
+                    output(&sys,newPE,step);
                     if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
@@ -95,7 +127,7 @@ int main(int argc, char *argv[])
             {
                     undo_move(&sys, move_type);
                     sys.sumenergy += currentPE;
-                    //output(&sys,currentPE,step);
+                    output(&sys,currentPE,step);
                     if(step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();

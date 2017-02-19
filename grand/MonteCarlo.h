@@ -58,6 +58,8 @@ typedef struct _GCMC_System
         int nBins;
         double * boxes;
         clock_t start_time;
+        bool ideal_flag,
+             energy_output_flag;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
