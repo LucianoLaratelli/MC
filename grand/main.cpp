@@ -12,19 +12,25 @@ int main(int argc, char *argv[])
     double currentPE,
            newPE;
 
-    if(argc < 5)
+    if(argc < 5 || argc > 8)
     {
-            printf("This program takes four arguments:\n the type of "\
-                    "particle, the desired number of iterations,"\
-                    "the length of one side of the box,"\
-                    " and the desired temperature, in that order.\n");
-            printf("It also takes one of two options:\n"\
-                   "-ideal: simulates an ideal gas exactly by setting pe = 0\n"\
-                   "-energy: outputs energy to file\n");
+            printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
+                   "|               INPUT ERROR               |\n"
+                   "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+            printf("This program takes at least four arguments,\n"
+                    "in the following order:\n"
+                    "\tthe type of particle,\n"
+                    "\tthe desired number of iterations,\n"\
+                    "\tthe length of one side of the box,\n"\
+                    "\tand the desired temperature.\n");
+            printf("It also takes two (optional) flags:\n"
+                   "\t-ideal  : simulates an ideal gas\n"
+                   "\t-energy : outputs energy to a file\n"
+                   "\t-pos    : outputs positions to a file\n");
             exit(EXIT_FAILURE);
     }
 
-    int count =1;
+    int arg_count = 1;
 
     sys.ideal_flag=false;
     sys.energy_output_flag=false;
@@ -39,19 +45,19 @@ int main(int argc, char *argv[])
         if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
         {
             sys.ideal_flag = true;
-            count++;
+            arg_count++;
             break;
         }
         else if(strcmp(argv[i],"-energy")==0)//output energy
         {
             sys.energy_output_flag = true;
-            count++;
+            arg_count++;
             break;
         }
-        else if (strcmp(argv[i],"-positions")==0)
+        else if (strcmp(argv[i],"-pos")==0)
         {
             sys.positions_output_flag = true;
-            count ++;
+            arg_count ++;
             break;
         }
         else
@@ -60,13 +66,21 @@ int main(int argc, char *argv[])
         }
     }
 
-    sscanf(argv[count], "%s", sys.particle_type);                     count++;
-    sscanf(argv[count], "%d", &sys.maxStep);/*number of iterations*/  count++;
-    sscanf(argv[count], "%lf", &sys.box_side_length);                 count++;
-    sscanf(argv[count], "%lf", &sys.system_temp);//kelvin
+    sscanf(argv[arg_count], "%s", sys.particle_type);               arg_count++;
+    sscanf(argv[arg_count], "%d", &sys.maxStep);/*iteration number*/arg_count++;
+    sscanf(argv[arg_count], "%lf", &sys.box_side_length);           arg_count++;
+    sscanf(argv[arg_count], "%lf", &sys.system_temp);//kelvin
 
-    printf("particle type = %s\nmax step = %d\nbox side = %.2lf\ntemp = %.2lf\n",sys.particle_type,sys.maxStep,sys.box_side_length,sys.system_temp);
 
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("|                     SYSTEM VARIABLES                     |\n");
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    printf("                   PARTICLE TYPE     = %s                   \n"
+           "                   NUM OF ITERATIONS = %d                   \n"
+           "                   BOX SIDE LENGTH   = %.0lf                \n"
+           "                   TEMPERATURE       = %.0lf                \n",  
+           sys.particle_type,sys.maxStep,sys.box_side_length,sys.system_temp);
+    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     sys.nBins = sys.box_side_length/sys.BinSize;
     sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
 
@@ -151,7 +165,7 @@ int main(int argc, char *argv[])
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     printf("|                      GCMC  COMPLETE                      |\n");
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-    printf("  This run took %f seconds.\nHave a nice day!\n"\
+    printf("This run took %f seconds.\nHave a nice day!\n"\
             ,time_till_now);//always good to have manners
 
     free(sys.boxes);
