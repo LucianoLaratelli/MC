@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     double currentPE,
            newPE;
 
-    if(argc < 5 || argc > 8)
+    if(argc < 5 || argc > 9)
     {
             printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                    "|               INPUT ERROR               |\n"
@@ -23,10 +23,11 @@ int main(int argc, char *argv[])
                     "\tthe desired number of iterations,\n"\
                     "\tthe length of one side of the box,\n"\
                     "\tand the desired temperature.\n");
-            printf("It also takes two (optional) flags:\n"
-                   "\t-ideal  : simulates an ideal gas\n"
-                   "\t-energy : outputs energy to a file\n"
-                   "\t-pos    : outputs positions to a file\n");
+            printf("It also takes four (optional) flags:\n"
+                   "\t-ideal     : simulates an ideal gas\n"
+                   "\t-energy    : outputs energy to a file\n"
+                   "\t-pos       : outputs positions to a file\n"
+                   "\t-stockmayer: simulates a stockmayer fluid\n");
             exit(EXIT_FAILURE);
     }
 
@@ -54,10 +55,16 @@ int main(int argc, char *argv[])
             arg_count++;
             break;
         }
+        else if (strcmp(argv[i],"-stockmayer")==0)
+        {
+            sys.stockmayer_flag = true;
+            arg_count++;
+            break;
+        }
         else if (strcmp(argv[i],"-pos")==0)
         {
             sys.positions_output_flag = true;
-            arg_count ++;
+            arg_count++;
             break;
         }
         else
@@ -86,6 +93,7 @@ int main(int argc, char *argv[])
 
     input(&sys);//set particle type
 
+    sys.polarizability = 2;
     sys.sigma_squared = sys.sigma*sys.sigma;
     sys.sigma_sixth = sys.sigma_squared * sys.sigma_squared * sys.sigma_squared;
     sys.sigma_twelfth = sys.sigma_sixth * sys.sigma_squared;
@@ -110,16 +118,31 @@ int main(int argc, char *argv[])
     printf("|                      STARTING  GCMC                      |\n");
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     currentPE = calculate_PE(&sys);//energy at first step 
+
     if(sys.energy_output_flag)
     {
         fprintf(sys.energies, "0 %lf\n", currentPE);
     }
+
 
     n = sys.particles.size(); //particle count 
     sys.sumenergy = currentPE;
     sys.sumparticles = n;
     sys.volume = sys.box_side_length * sys.box_side_length * sys.box_side_length;
     sys.cutoff = sys.box_side_length * .5;
+    particle added;
+
+    added.x[0] = 0;
+    added.x[1] = 0;
+    added.x[2] = 0;
+    sys.particles.push_back(added);
+
+    particle added2;
+    added2.x[0] = 4;
+    added2.x[1] = 0;
+    added2.x[2] = 0;
+    sys.particles.push_back(added2);
+
 
     for(step = 1; step<sys.maxStep; step++)
     {

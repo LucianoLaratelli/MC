@@ -11,13 +11,16 @@
 
 typedef struct particle_particle
 {
-	double x[3];
+	double x[3],
+               dipole_magnitude,
+               dipole[3];
 } particle;
 
 typedef struct _translational_data
 {
 	int pick;
 	double phi, gamma, delta;
+        double dipole[3];
 } translational_data;
 
 typedef struct _removal_data
@@ -39,6 +42,8 @@ typedef struct _GCMC_System
 	double epsilon,
                particle_mass,
                sigma,
+               polarizability,
+               dipole_magnitude,
                sigma_squared,//powers of sigma for PE
                sigma_sixth,
                sigma_twelfth;
@@ -59,7 +64,9 @@ typedef struct _GCMC_System
         clock_t start_time;
         bool ideal_flag,
              energy_output_flag,
-             positions_output_flag;
+             stockmayer_flag,
+             positions_output_flag,
+             debug_flag;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
@@ -74,8 +81,11 @@ void input(GCMC_System *sys);
 double calculate_PE(GCMC_System *sys);
 double distfinder(GCMC_System *sys, int id_a, int id_b);
 
-double randomish();
+double random_range(double min, double max);
 MoveType make_move(GCMC_System *sys);
+
+double ** matrix_madness(GCMC_System *sys);
+double * pick_dipole_direction(GCMC_System *sys);
 
 void create_particle(GCMC_System *sys);
 void move_particle(GCMC_System *sys, int pick);

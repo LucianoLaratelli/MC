@@ -51,6 +51,8 @@ void input(GCMC_System *sys)
        sys->sigma = 3.15100;
        sys->epsilon = 76.42000;
        sys->particle_mass = 18.016;
+       sys->dipole_magnitude = 1.86;
+       sys->polarizability = 0;
    }
    else
    {
@@ -86,8 +88,36 @@ double calculate_PE(GCMC_System *sys)
                 s_over_d_12 = sys->sigma_twelfth * dist_twelfth; 
                 s_over_d_6 = sys->sigma_sixth * dist_sixth; 
                 pe += 4.0 * sys->epsilon * (s_over_d_12 - s_over_d_6);
+                
             }
 	}
+        if(sys->stockmayer_flag)
+        {
+            double ** matrix = matrix_madness(sys);
+            double correction = 0;
+            for(int i = 0;i<pool;i++)
+            {
+                for(int j=i+1;j<pool;j++)
+                {
+                    if(i==j)
+                    {
+                        continue;
+                    }
+                    for(int p = 0;p<3;p++)
+                    {
+                        for(int q = 0;q<3;q++)
+                        {
+                            correction += sys->particles[i].dipole[p]*
+                                          matrix[(3*i)+p][(3*j)+q]*
+                                          sys->particles[j].dipole[q];
+                        }
+                    }
+                }
+            }
+            printf("pe:%lf\ndd:%f\npe+dd:%lf\n",pe,correction,pe+correction);
+            pe += correction; 
+            free(matrix);
+        }
 	return pe;//in KELVIN
 }
 
@@ -117,19 +147,19 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 	return dist;
 }
 
-//returns a random float between 0 and 1
-double randomish()
+//return a random double between min and max (thanks StackOverflow!)
+double random_range(double min, double max)
 {
-	double r = random();
-	return r / ((double)RAND_MAX + 1);
+	return min + (random() / ((double)RAND_MAX) * (max - min));
 }
 
 MoveType make_move(GCMC_System *sys)
 {
         //MoveType is an enum in MonteCarlo.h 
 	MoveType move;
+        
 	int pool = sys->particles.size();
-
+/*
 	if (pool == 0)
 	{
 		create_particle(sys);
@@ -138,8 +168,9 @@ MoveType make_move(GCMC_System *sys)
 	}
 	else
 	{
-		double pick = random() % pool,//picks random particle
-		       choice = randomish(); //random float between 0 and 1
+           */ 
+		double pick = random() % pool;//picks random particle
+	/*	       choice = random_range(0,1);//random float between 0 and 1
 		fflush(stdout);
 		if (choice<0.33333)
 		{
@@ -147,41 +178,120 @@ MoveType make_move(GCMC_System *sys)
 			move = CREATE_PARTICLE;
 		}
 		else if (choice >= (.666667))
-		{
-			move_particle(sys, pick);
+		{*/
+			move_particle(sys,pick);
 			move = TRANSLATE;
-		}
+		/*}
 		else
 		{
 			destroy_particle(sys, pick);
 			move = DESTROY_PARTICLE;
 		}
-	}
+	}*/
 	return move;
+}
+
+
+double ** matrix_madness(GCMC_System *sys)
+{
+    int n = sys->particles.size();
+    double ** matrix =(double**) malloc(sizeof(double*)*3*n);
+    for(int i = 0;i<3*n;i++)
+    {
+        matrix[i] = (double*)calloc(3*n, sizeof(double));
+    }
+    for(int a = 0;a < 3 * n;a++)
+    {
+        if(sys->polarizability == 0)
+        {
+            matrix[a][a]= 1000000000000000000000000000000.f;
+        }
+        else
+        {
+            matrix[a][a] = 1/sys->polarizability;
+        }
+    }
+    for(int i = 0;i<n-1;i++)
+    {
+        for(int j = i+1;j<n;j++)
+        {
+            double r = distfinder(sys,i,j),
+                   rinv = 1/r,
+                   rinv2 = rinv * rinv,
+                   rinv3 = rinv2 * rinv,
+                   rinv5 = rinv2 * rinv3,
+                   del_x = sys->particles[i].x[0] - sys->particles[j].x[0],
+                   del_y = sys->particles[i].x[1] - sys->particles[j].x[1],
+                   del_z = sys->particles[i].x[2] - sys->particles[j].x[2],
+                   deltas[3] = {del_x, del_y, del_z};
+            for(int p = 0; p<3;p++)
+            {
+                for(int q = 0;q<3;q++)
+                {
+                    matrix[(3*i)+p][(3*j)+q] = -3*rinv5*deltas[p]*deltas[q];
+                    if(p==q)
+                    {
+                        matrix[(3*i)+p][(3*j)+q] += rinv3;
+                    }
+                    matrix[(3*j)+p][(3*i)+q] = matrix[(3*i)+p][(3*j)+q];
+                }
+            }
+        }
+    }
+    return matrix;
+}
+
+
+
+//this function picks a random point on the surface of a unit sphere
+double * pick_dipole_direction(GCMC_System *sys)
+{
+    
+    double theta = random_range(0,2*M_PI),
+           z = random_range(-1,1),
+           x = sqrt(1-(z*z)) * cos(theta),
+           y = sqrt(1-(z*z)) * cos(theta);
+    double * dipole;
+    dipole = (double*)malloc(sizeof(double) * 3);
+    dipole[0] = x * sys->dipole_magnitude;
+    dipole[1] = y * sys->dipole_magnitude;
+    dipole[2] = z * sys->dipole_magnitude;
+    
+    return dipole;
 }
 
 
 //insert particle at random location
 void create_particle( GCMC_System *sys)
 {
-        //we make a struct of type "particle"
-	particle to_be_inserted; 
-        //we create random coordinates for the particle 
-	to_be_inserted.x[0] = randomish()*sys->box_side_length;
-	to_be_inserted.x[1] = randomish()*sys->box_side_length;
-	to_be_inserted.x[2] = randomish()*sys->box_side_length;
-        //we add the particle to the vector that holds all our particles
- 	sys->particles.push_back(to_be_inserted);
-	return;
+    //we make a struct of type "particle"
+    particle to_be_inserted; 
+    //we create random coordinates for the particle 
+    to_be_inserted.x[0] = random_range(0,sys->box_side_length);
+    to_be_inserted.x[1] = random_range(0,sys->box_side_length);
+    to_be_inserted.x[2] = random_range(0,sys->box_side_length);
+
+    if(sys->stockmayer_flag)
+    {
+        double * dipole = pick_dipole_direction(sys);
+        to_be_inserted.dipole[0] = dipole[0] * sys->dipole_magnitude;
+        to_be_inserted.dipole[1] = dipole[1] * sys->dipole_magnitude;
+        to_be_inserted.dipole[2] = dipole[2] * sys->dipole_magnitude;
+        free(dipole);
+    }
+    //we add the particle to the vector that holds all our particles
+    sys->particles.push_back(to_be_inserted);
+    return;
 }
 
 
 //Displace a random particle a random distance
 void move_particle(GCMC_System *sys, int pick)
 {
-        double phi = (randomish()-0.5)* sys->box_side_length,
-               gamma = (randomish()-0.5)*sys->box_side_length,
-               delta = (randomish()-0.5)*sys->box_side_length;
+        double negative_half_box = -0.5 * sys->box_side_length;
+        double phi = random_range(negative_half_box,sys->cutoff),
+               gamma = random_range(negative_half_box,sys->cutoff), 
+               delta = random_range(negative_half_box,sys->cutoff);
         //store displacement in case it needs to be undone
         sys->move.pick = pick;
         sys->move.phi = phi;
@@ -202,6 +312,18 @@ void move_particle(GCMC_System *sys, int pick)
             {
                 sys->particles[pick].x[I] += sys->box_side_length;
             }
+        }
+        if(sys->stockmayer_flag)
+        {
+            sys->move.dipole[0] = sys->particles[pick].dipole[0];
+            sys->move.dipole[0] = sys->particles[pick].dipole[0];
+            sys->move.dipole[0] = sys->particles[pick].dipole[0];
+
+            double * dipole = pick_dipole_direction(sys);
+            sys->particles[pick].dipole[0] = dipole[0] * sys->dipole_magnitude;
+            sys->particles[pick].dipole[1] = dipole[1] * sys->dipole_magnitude;
+            sys->particles[pick].dipole[2] = dipole[2] * sys->dipole_magnitude;
+            free(dipole);
         }
 	return;
 }
@@ -228,13 +350,14 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
                beta = 1.0 / (k * sys->system_temp),//thermodynamic beta
                volume = sys->volume,
                boltzmann_factor = pow(e,(-beta*delta)),
-               acceptance;
+               acceptance,
+               random = random_range(0,1);
 	int pool = sys->particles.size(),
             poolplus = pool + 1;
 	if (move_type == TRANSLATE )
 	{
                 acceptance = boltzmann_factor;
-		if (acceptance > randomish())
+		if (acceptance > random)
 		{
 			return true;
 		}
@@ -245,9 +368,9 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	}
 	else if (move_type == CREATE_PARTICLE)
 	{
-                acceptance = boltzmann_factor* volume * conv_factor / \
+                acceptance =  boltzmann_factor* volume * conv_factor / \
                              (sys->system_temp * (double)pool);
-		if (acceptance > randomish())
+		if (acceptance > random)
 		{
 			return true;
 		}
@@ -258,9 +381,9 @@ bool move_accepted(double cpe, double npe, MoveType move_type,\
 	}
 	else if (move_type == DESTROY_PARTICLE )//if we DESTROYED a particle
 	{
-                acceptance = boltzmann_factor * sys->system_temp * \
+                acceptance =  boltzmann_factor * sys->system_temp * \
                              (double)poolplus / (volume * conv_factor);
-		if (acceptance > randomish())
+		if (acceptance > random)
 		{
 			return true;
 		}
@@ -321,6 +444,12 @@ void unmove_particle(GCMC_System *sys)
             {
                 sys->particles[pick].x[I] += sys->box_side_length;
             }
+        }
+        if(sys->stockmayer_flag)
+        {
+            sys->particles[pick].dipole[0] = sys->move.dipole[0];
+            sys->particles[pick].dipole[1] = sys->move.dipole[1];
+            sys->particles[pick].dipole[2] = sys->move.dipole[2];
         }
 	return;
 }
