@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
     double currentPE,
            newPE;
 
-    if(argc < 5 || argc > 9)
+    if(argc < 5 || argc > 8)
     {
             printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n"
                    "|               INPUT ERROR               |\n"
@@ -23,26 +23,23 @@ int main(int argc, char *argv[])
                     "\tthe desired number of iterations,\n"\
                     "\tthe length of one side of the box,\n"\
                     "\tand the desired temperature.\n");
-            printf("It also takes four (optional) flags:\n"
+            printf("It also takes three (optional) flags:\n"
                    "\t-ideal     : simulates an ideal gas\n"
                    "\t-energy    : outputs energy to a file\n"
-                   "\t-pos       : outputs positions to a file\n"
-                   "\t-stockmayer: simulates a stockmayer fluid\n");
+                   "\t-pos       : outputs positions to a file\n");
             exit(EXIT_FAILURE);
     }
 
     int arg_count = 1;
 
     sys.ideal_flag=false;
-    sys.energy_output_flag=false;
+    sys.energy_output_flag = false;
+    sys.positions_output_flag = false;
+    sys.stockmayer_flag = false;
     
     //take flags if specified
-    //no, you can't use both at the same time
-    //if that doesn't make sense, think about what an ideal gas is and what
-    //calculate_pe is calculating
     for(int i = 1;i < argc;i++)
     {
-
         if(strcmp(argv[i], "-ideal")==0)//makes calculate__pe return 0
         {
             sys.ideal_flag = true;
@@ -52,12 +49,6 @@ int main(int argc, char *argv[])
         else if(strcmp(argv[i],"-energy")==0)//output energy
         {
             sys.energy_output_flag = true;
-            arg_count++;
-            break;
-        }
-        else if (strcmp(argv[i],"-stockmayer")==0)
-        {
-            sys.stockmayer_flag = true;
             arg_count++;
             break;
         }

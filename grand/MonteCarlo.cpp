@@ -12,7 +12,7 @@ void input(GCMC_System *sys)
         krypton[] = "Kr",
         xenon[] = "Xe",
         water[] = "Water";
-   char* particle_type= sys->particle_type;
+   char * particle_type= sys->particle_type;
    if(strcmp(particle_type,argon) == 0)
    {
        sys->sigma = 3.371914;
@@ -46,13 +46,14 @@ void input(GCMC_System *sys)
    //water is for Stockmeyer fluids only
    else if(strcmp(particle_type,water) == 0)
    {
-       char oxygen[] = "O";
+       char oxygen[] = "O";//water is modeled by a single-point oxygen
        strcpy(sys->particle_type,oxygen);
        sys->sigma = 3.15100;
        sys->epsilon = 76.42000;
        sys->particle_mass = 18.016;
        sys->dipole_magnitude = 1.86;
        sys->polarizability = 0;
+       sys->stockmayer_flag = true;//set the flag so we can never forget it
    }
    else
    {
@@ -224,6 +225,7 @@ double ** matrix_madness(GCMC_System *sys)
                    del_y = sys->particles[i].x[1] - sys->particles[j].x[1],
                    del_z = sys->particles[i].x[2] - sys->particles[j].x[2],
                    deltas[3] = {del_x, del_y, del_z};
+            printf("r = %lf\n", r);
             for(int p = 0; p<3;p++)
             {
                 for(int q = 0;q<3;q++)
@@ -239,6 +241,7 @@ double ** matrix_madness(GCMC_System *sys)
         }
     }
     return matrix;
+    free(matrix);
 }
 
 
