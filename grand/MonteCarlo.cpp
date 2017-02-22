@@ -551,23 +551,36 @@ void output(GCMC_System *sys, double accepted_energy)
 
         if(sys->output_flag)
         {
-            fprintf(sys->output,"ITEM: TIMESTEP\n"
-                                "%d\n",sys->step);
-            fprintf(sys->output,"ITEM: NUMBER OF ATOMS\n"
-                                "%d\n",(int)sys->particles.size());
-            fprintf(sys->output,"ITEM: BOX BOUNDS pp pp pp\n"
-                               "0 %lf\n0 %lf\n0 %lf\n",\
-                               sys->box_side_length,sys->box_side_length,\
-                               sys->box_side_length);
-            fprintf(sys->output,"ITEM: ATOMS id type x y z mux muy muz\n");
-            for (int p = 0; p<pool; p++)
+            if(sys->stockmayer_flag)
             {
-                    fprintf(sys->output, "%d 6 %lf %lf %lf %lf %lf %lf\n",\
-                            p,sys->particles[p].x[0], sys->particles[p].x[1],\
-                            sys->particles[p].x[2],\
-                            sys->particles[p].dipole[0]/85.10597636,\
-                            sys->particles[p].dipole[1]/85.10597636,\
-                            sys->particles[p].dipole[2]/85.10597636);
+                fprintf(sys->output,"ITEM: TIMESTEP\n"
+                                    "%d\n",sys->step);
+                fprintf(sys->output,"ITEM: NUMBER OF ATOMS\n"
+                                    "%d\n",(int)sys->particles.size());
+                fprintf(sys->output,"ITEM: BOX BOUNDS pp pp pp\n"
+                                   "0 %lf\n0 %lf\n0 %lf\n",\
+                                   sys->box_side_length,sys->box_side_length,\
+                                   sys->box_side_length);
+                fprintf(sys->output,"ITEM: ATOMS id type x y z mux muy muz\n");
+                for (int p = 0; p<pool; p++)
+                {
+                        fprintf(sys->output, "%d 6 %lf %lf %lf %lf %lf %lf\n",\
+                                p,sys->particles[p].x[0], sys->particles[p].x[1],\
+                                sys->particles[p].x[2],\
+                                sys->particles[p].dipole[0]/85.10597636,\
+                                sys->particles[p].dipole[1]/85.10597636,\
+                                sys->particles[p].dipole[2]/85.10597636);
+                }
+            }
+            else
+            {
+                fprintf(sys->output,"%d\n\n",pool);
+                for(int p=0;p<pool;p++)
+                {
+                    fprintf(sys->output,"%s %lf %lf %lf\n", sys->particle_type,
+                            sys->particles[p].x[0], sys->particles[p].x[1],
+                            sys->particles[p].x[2]);
+                }
             }
         }
 	return;

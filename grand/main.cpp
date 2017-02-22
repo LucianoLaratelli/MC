@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
     else
     {
         printf("                   NUM OF FLAGS      = %d                   \n",
-            arg_count); 
+            arg_count-1); 
     }
     sscanf(argv[arg_count], "%s", sys.particle_type);               arg_count++;
     sscanf(argv[arg_count], "%d", &sys.maxStep);/*iteration number*/arg_count++;
