@@ -31,7 +31,7 @@ typedef struct _removal_data
 
 typedef struct _GCMC_System
 {
-        FILE * positions;
+        FILE * output;
         FILE * energies;
         FILE * unweightedradial;
         FILE * weightedradial;
@@ -59,14 +59,14 @@ typedef struct _GCMC_System
                sumenergy;
         //next three lines are for radial distribution function
         double BinSize = .1; 
-        int nBins;
+        int nBins,
+            step;
         double * boxes;
         clock_t start_time;
         bool ideal_flag,
              energy_output_flag,
              stockmayer_flag,
-             positions_output_flag,
-             debug_flag;
+             output_flag;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };

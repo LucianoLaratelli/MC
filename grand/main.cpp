@@ -4,8 +4,7 @@ int main(int argc, char *argv[])
 {
     GCMC_System sys;
     
-    int step,
-        n;
+    int n;
     
     MoveType move_type;
 
@@ -34,7 +33,7 @@ int main(int argc, char *argv[])
 
     sys.ideal_flag=false;
     sys.energy_output_flag = false;
-    sys.positions_output_flag = false;
+    sys.output_flag = false;
     sys.stockmayer_flag = false;
     
     //take flags if specified
@@ -52,9 +51,9 @@ int main(int argc, char *argv[])
             arg_count++;
             break;
         }
-        else if (strcmp(argv[i],"-pos")==0)
+        else if (strcmp(argv[i],"-output")==0)
         {
-            sys.positions_output_flag = true;
+            sys.output_flag = true;
             arg_count++;
             break;
         }
@@ -95,9 +94,9 @@ int main(int argc, char *argv[])
     {
         sys.energies = fopen("energies.dat", "w");
     }
-    if(sys.positions_output_flag)
+    if(sys.output_flag)
     {
-        sys.positions = fopen("positions.xyz", "w");
+        sys.output = fopen("output.txt", "w");
     }
 
     sys.unweightedradial = fopen("unweightedradialdistribution.txt", "w");
@@ -108,6 +107,28 @@ int main(int argc, char *argv[])
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     printf("|                      STARTING  GCMC                      |\n");
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    sys.step = 0;
+    sys.cutoff = sys.box_side_length * .5;
+
+    particle added;
+
+    added.x[0] = 0;
+    added.x[1] = 0;
+    added.x[2] = 0;
+    added.dipole[0] = 1/85.10597636;
+    added.dipole[1] = 0/85.10597636;
+    added.dipole[2] = 0/85.10597636;
+    sys.particles.push_back(added);
+
+    particle added2;
+    added2.x[0] = 4;
+    added2.x[1] = 0;
+    added2.x[2] = 0;
+    added2.dipole[0] = 1/85.10597636;
+    added2.dipole[1] = 0/85.10597636;
+    added2.dipole[2] = 0/85.10597636;
+    sys.particles.push_back(added2);
+
     currentPE = calculate_PE(&sys);//energy at first step 
 
     if(sys.energy_output_flag)
@@ -120,33 +141,19 @@ int main(int argc, char *argv[])
     sys.sumenergy = currentPE;
     sys.sumparticles = n;
     sys.volume = sys.box_side_length * sys.box_side_length * sys.box_side_length;
-    sys.cutoff = sys.box_side_length * .5;
-    particle added;
 
-    added.x[0] = 0;
-    added.x[1] = 0;
-    added.x[2] = 0;
-    sys.particles.push_back(added);
-
-    particle added2;
-    added2.x[0] = 4;
-    added2.x[1] = 0;
-    added2.x[2] = 0;
-    sys.particles.push_back(added2);
-
-
-    for(step = 1; step<sys.maxStep; step++)
+    for(sys.step = 1; sys.step<sys.maxStep; sys.step++)
     {
             move_type = make_move(&sys); 
             
             newPE = calculate_PE(&sys);
-            if(step % (sys.maxStep/10) == 0)
+            if(sys.step % (sys.maxStep/10) == 0)
             {
                 double cycles_till_now = (double)(clock()-sys.start_time),
                        time_till_now = cycles_till_now/CLOCKS_PER_SEC;
                 printf("  %.0f%% of iteration steps done. Time elapsed:"\
                         " %.2lf seconds.\n",\
-                        ((double)step/(double)sys.maxStep)*100, time_till_now);
+                        ((double)sys.step/(double)sys.maxStep)*100, time_till_now);
             }
             if(move_accepted(currentPE, newPE,\
                         move_type, &sys))
@@ -154,11 +161,11 @@ int main(int argc, char *argv[])
                     currentPE = newPE;//updates energy
                     sys.sumenergy += newPE;
                     output(&sys,newPE);
-                    if(step>=sys.maxStep*.5)
+                    if(sys.step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
                         sys.sumparticles += n;
-                        radialDistribution(&sys,step);
+                        radialDistribution(&sys,sys.step);
                     }
             }
             else // Move rejected
@@ -166,11 +173,11 @@ int main(int argc, char *argv[])
                     undo_move(&sys, move_type);
                     sys.sumenergy += currentPE;
                     output(&sys,currentPE);
-                    if(step>=sys.maxStep*.5)
+                    if(sys.step>=sys.maxStep*.5)
                     {
                         n = sys.particles.size();
                         sys.sumparticles += n;
-                        radialDistribution(&sys,step);
+                        radialDistribution(&sys,sys.step);
                     }
             }
     }
@@ -189,9 +196,9 @@ int main(int argc, char *argv[])
     {
         fclose(sys.energies);
     }
-    if(sys.energy_output_flag)
+    if(sys.output_flag)
     {
-        fclose(sys.positions);
+        fclose(sys.output);
     }
     fclose(sys.unweightedradial);
     fclose(sys.weightedradial);

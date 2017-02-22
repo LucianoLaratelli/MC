@@ -11,6 +11,7 @@ void input(GCMC_System *sys)
         neon[] = "Ne",
         krypton[] = "Kr",
         xenon[] = "Xe",
+        o2[] = "O2",
         water[] = "Water";
    char * particle_type= sys->particle_type;
    if(strcmp(particle_type,argon) == 0)
@@ -43,6 +44,12 @@ void input(GCMC_System *sys)
        sys->epsilon = 237.985247;
        sys->particle_mass = 131.293;
    }
+   else if(strcmp(particle_type,o2) == 0)//thanks Doug!
+    {
+        sys->sigma = 0.8;//angstroms
+        sys->epsilon = 4.0;//kcal / mol, CONVERT TO PROPER UNITS
+        sys->particle_mass = 15.9994;
+    }
    //water is for Stockmeyer fluids only
    else if(strcmp(particle_type,water) == 0)
    {
@@ -51,14 +58,14 @@ void input(GCMC_System *sys)
        sys->sigma = 3.15100;
        sys->epsilon = 76.42000;
        sys->particle_mass = 18.016;
-       sys->dipole_magnitude = 1.86;
+       sys->dipole_magnitude = 1.86*85.10597636;
        sys->polarizability = 0;
        sys->stockmayer_flag = true;//set the flag so we can never forget it
    }
    else
    {
        printf("Not a supported chemical species!\nAllowed values for Lennard-"\
-               "Jones are:\nAr\nNe\nHe\nKr\nXe\nAllowed values for "\
+               "Jones are:\nAr\nNe\nHe\nKr\nXe\nO2\nAllowed values for "\
                "Stockmeyer are:\nWater\nPlease try again!\n");
        exit(EXIT_FAILURE);
    }
@@ -115,7 +122,7 @@ double calculate_PE(GCMC_System *sys)
                     }
                 }
             }
-            printf("pe:%lf\ndd:%f\npe+dd:%lf\n",pe,correction,pe+correction);
+            printf("dipole dipole = %lf\njust lj = %lf\n",correction,pe);
             pe += correction; 
             free(matrix);
         }
@@ -124,8 +131,8 @@ double calculate_PE(GCMC_System *sys)
 
 double distfinder(GCMC_System *sys, int id_a, int id_b)
 {
-	double dist,
-               delta,
+	double dist = 0.0,
+               delta = 0.0,
                delta2 = 0.00;
 
 	for(int i = 0; i<3; i++)
@@ -136,7 +143,7 @@ double distfinder(GCMC_System *sys, int id_a, int id_b)
 		{
 			delta -= sys->box_side_length;
 		}
-		else if (delta <= -sys->cutoff)
+		else if (delta <= (-1*sys->cutoff))
 		{
 			delta += sys->box_side_length;
 		}
@@ -223,9 +230,20 @@ double ** matrix_madness(GCMC_System *sys)
                    rinv5 = rinv2 * rinv3,
                    del_x = sys->particles[i].x[0] - sys->particles[j].x[0],
                    del_y = sys->particles[i].x[1] - sys->particles[j].x[1],
-                   del_z = sys->particles[i].x[2] - sys->particles[j].x[2],
-                   deltas[3] = {del_x, del_y, del_z};
-            printf("r = %lf\n", r);
+                   del_z = sys->particles[i].x[2] - sys->particles[j].x[2];
+                   if(del_x > sys->cutoff)
+                   {
+                       del_x -= sys->cutoff;
+                   }
+                   if(del_y > sys->cutoff)
+                   {
+                       del_y -= sys->cutoff;
+                   }
+                   if(del_z > sys->cutoff)
+                   {
+                       del_z -= sys->cutoff;
+                   }
+            double deltas[3] = {del_x, del_y, del_z};
             for(int p = 0; p<3;p++)
             {
                 for(int q = 0;q<3;q++)
@@ -249,7 +267,6 @@ double ** matrix_madness(GCMC_System *sys)
 //this function picks a random point on the surface of a unit sphere
 double * pick_dipole_direction(GCMC_System *sys)
 {
-    
     double theta = random_range(0,2*M_PI),
            z = random_range(-1,1),
            x = sqrt(1-(z*z)) * cos(theta),
@@ -259,7 +276,6 @@ double * pick_dipole_direction(GCMC_System *sys)
     dipole[0] = x * sys->dipole_magnitude;
     dipole[1] = y * sys->dipole_magnitude;
     dipole[2] = z * sys->dipole_magnitude;
-    
     return dipole;
 }
 
@@ -277,9 +293,9 @@ void create_particle( GCMC_System *sys)
     if(sys->stockmayer_flag)
     {
         double * dipole = pick_dipole_direction(sys);
-        to_be_inserted.dipole[0] = dipole[0] * sys->dipole_magnitude;
-        to_be_inserted.dipole[1] = dipole[1] * sys->dipole_magnitude;
-        to_be_inserted.dipole[2] = dipole[2] * sys->dipole_magnitude;
+        to_be_inserted.dipole[0] = dipole[0];
+        to_be_inserted.dipole[1] = dipole[1];
+        to_be_inserted.dipole[2] = dipole[2];
         free(dipole);
     }
     //we add the particle to the vector that holds all our particles
@@ -319,13 +335,13 @@ void move_particle(GCMC_System *sys, int pick)
         if(sys->stockmayer_flag)
         {
             sys->move.dipole[0] = sys->particles[pick].dipole[0];
-            sys->move.dipole[0] = sys->particles[pick].dipole[0];
-            sys->move.dipole[0] = sys->particles[pick].dipole[0];
+            sys->move.dipole[1] = sys->particles[pick].dipole[1];
+            sys->move.dipole[2] = sys->particles[pick].dipole[2];
 
             double * dipole = pick_dipole_direction(sys);
-            sys->particles[pick].dipole[0] = dipole[0] * sys->dipole_magnitude;
-            sys->particles[pick].dipole[1] = dipole[1] * sys->dipole_magnitude;
-            sys->particles[pick].dipole[2] = dipole[2] * sys->dipole_magnitude;
+            sys->particles[pick].dipole[0] = dipole[0];
+            sys->particles[pick].dipole[1] = dipole[1];
+            sys->particles[pick].dipole[2] = dipole[2];
             free(dipole);
         }
 	return;
@@ -517,30 +533,36 @@ void radialDistribution(GCMC_System *sys,int step)
 
 void output(GCMC_System *sys, double accepted_energy)
 {
-        if(!sys->energy_output_flag || !sys->positions_output_flag)
+        if(sys->energy_output_flag)
         {
-            return;
+            fprintf(sys->energies, "%lf \n",accepted_energy);
         }
-        
 	int pool = sys->particles.size();
         if(pool==0)
         {
             return;
         }
 
-        if(sys->positions_output_flag)
+        if(sys->output_flag)
         {
-            fprintf(sys->positions, "%d \n\n", pool);
+            fprintf(sys->output,"ITEM: TIMESTEP\n"
+                                "%d\n",sys->step);
+            fprintf(sys->output,"ITEM: NUMBER OF ATOMS\n"
+                                "%d\n",(int)sys->particles.size());
+            fprintf(sys->output,"ITEM: BOX BOUNDS pp pp pp\n"
+                               "0 %lf\n0 %lf\n0 %lf\n",\
+                               sys->box_side_length,sys->box_side_length,\
+                               sys->box_side_length);
+            fprintf(sys->output,"ITEM: ATOMS id type x y z mux muy muz\n");
             for (int p = 0; p<pool; p++)
             {
-                    fprintf(sys->positions, "%s %lf %lf %lf\n",\
-                            sys->particle_type, sys->particles[p].x[0],\
-                            sys->particles[p].x[1], sys->particles[p].x[2]);
+                    fprintf(sys->output, "%d 6 %lf %lf %lf %lf %lf %lf\n",\
+                            p,sys->particles[p].x[0], sys->particles[p].x[1],\
+                            sys->particles[p].x[2],\
+                            sys->particles[p].dipole[0]/85.10597636,\
+                            sys->particles[p].dipole[1]/85.10597636,\
+                            sys->particles[p].dipole[2]/85.10597636);
             }
-        }
-        if(sys->energy_output_flag)
-        {
-            fprintf(sys->energies, "%lf \n",accepted_energy);
         }
 	return;
 }
