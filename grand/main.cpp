@@ -25,7 +25,8 @@ int main(int argc, char *argv[])
             printf("It also takes three (optional) flags:\n"
                    "\t-ideal     : simulates an ideal gas\n"
                    "\t-energy    : outputs energy to a file\n"
-                   "\t-pos       : outputs positions to a file\n");
+                   "\t-debug     : lots of output about code\n"
+                   "\t-NVT       : make translations only\n");
             exit(EXIT_FAILURE);
     }
 
@@ -95,8 +96,6 @@ int main(int argc, char *argv[])
            "                   BOX SIDE LENGTH   = %.0lf                \n"
            "                   TEMPERATURE       = %.0lf                \n",  
            sys.particle_type,sys.maxStep,sys.box_side_length,sys.system_temp);
-    printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
-
     sys.nBins = sys.box_side_length/sys.BinSize;
     sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
 
