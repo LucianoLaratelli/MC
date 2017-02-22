@@ -165,37 +165,43 @@ MoveType make_move(GCMC_System *sys)
 {
         //MoveType is an enum in MonteCarlo.h 
 	MoveType move;
-        
 	int pool = sys->particles.size();
-/*
-	if (pool == 0)
-	{
-		create_particle(sys);
-		pool = sys->particles.size();
-		move = CREATE_PARTICLE;
-	}
-	else
-	{
-           */ 
-		double pick = random() % pool;//picks random particle
-	/*	       choice = random_range(0,1);//random float between 0 and 1
-		fflush(stdout);
-		if (choice<0.33333)
-		{
-			create_particle(sys);
-			move = CREATE_PARTICLE;
-		}
-		else if (choice >= (.666667))
-		{*/
-			move_particle(sys,pick);
-			move = TRANSLATE;
-		/*}
-		else
-		{
-			destroy_particle(sys, pick);
-			move = DESTROY_PARTICLE;
-		}
-	}*/
+        if(sys->NVT_flag)
+        {
+            double pick = random() % pool;
+            move_particle(sys,pick);
+            move = TRANSLATE;
+        }
+        else
+        {
+            if (pool == 0)
+            {
+                    create_particle(sys);
+                    pool = sys->particles.size();
+                    move = CREATE_PARTICLE;
+            }
+            else
+            {
+                double pick = random() % pool,//picks random particle
+                       choice = random_range(0,1);//random float between 0 and 1
+                fflush(stdout);
+                if (choice<0.33333)
+                {
+                        create_particle(sys);
+                        move = CREATE_PARTICLE;
+                }
+                else if (choice >= (.666667))
+                {
+                        move_particle(sys,pick);
+                        move = TRANSLATE;
+                }
+                else
+                {
+                        destroy_particle(sys, pick);
+                        move = DESTROY_PARTICLE;
+                }
+            }
+        }
 	return move;
 }
 

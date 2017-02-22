@@ -35,6 +35,8 @@ int main(int argc, char *argv[])
     sys.energy_output_flag = false;
     sys.output_flag = false;
     sys.stockmayer_flag = false;
+    sys.debug_flag = false;
+    sys.NVT_flag = false;
     
     //take flags if specified
     for(int i = 1;i < argc;i++)
@@ -43,41 +45,58 @@ int main(int argc, char *argv[])
         {
             sys.ideal_flag = true;
             arg_count++;
-            break;
+            continue;
         }
         else if(strcmp(argv[i],"-energy")==0)//output energy
         {
             sys.energy_output_flag = true;
             arg_count++;
-            break;
+            continue;
         }
         else if (strcmp(argv[i],"-output")==0)
         {
             sys.output_flag = true;
             arg_count++;
-            break;
+            continue;
         }
-        else
+        else if(strcmp(argv[i],"-debug")==0)
         {
-            break;
+            sys.debug_flag = true;
+            arg_count++;
+            continue;
+        }
+        else if(strcmp(argv[i],"-NVT")==0)
+        {
+            sys.NVT_flag = true;
+            arg_count++;
+            continue;
         }
     }
-
-    sscanf(argv[arg_count], "%s", sys.particle_type);               arg_count++;
-    sscanf(argv[arg_count], "%d", &sys.maxStep);/*iteration number*/arg_count++;
-    sscanf(argv[arg_count], "%lf", &sys.box_side_length);           arg_count++;
-    sscanf(argv[arg_count], "%lf", &sys.system_temp);//kelvin
-
 
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
     printf("|                     SYSTEM VARIABLES                     |\n");
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+    if(arg_count == 1)//arg count starts at 1, remaining at 1 means 0 flags
+    {
+        printf("                   NUM OF FLAGS      = 0                   \n");
+    }
+    else
+    {
+        printf("                   NUM OF FLAGS      = %d                   \n",
+            arg_count); 
+    }
+    sscanf(argv[arg_count], "%s", sys.particle_type);               arg_count++;
+    sscanf(argv[arg_count], "%d", &sys.maxStep);/*iteration number*/arg_count++;
+    sscanf(argv[arg_count], "%lf", &sys.box_side_length);           arg_count++;
+    sscanf(argv[arg_count], "%lf", &sys.system_temp);//kelvin
+                                                 
     printf("                   PARTICLE TYPE     = %s                   \n"
            "                   NUM OF ITERATIONS = %d                   \n"
            "                   BOX SIDE LENGTH   = %.0lf                \n"
            "                   TEMPERATURE       = %.0lf                \n",  
            sys.particle_type,sys.maxStep,sys.box_side_length,sys.system_temp);
     printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n");
+
     sys.nBins = sys.box_side_length/sys.BinSize;
     sys.boxes = (double*)(calloc(sys.nBins,sizeof(double)));
 
@@ -110,24 +129,27 @@ int main(int argc, char *argv[])
     sys.step = 0;
     sys.cutoff = sys.box_side_length * .5;
 
-    particle added;
+    if(sys.debug_flag)
+    {
+        particle added;
 
-    added.x[0] = 0;
-    added.x[1] = 0;
-    added.x[2] = 0;
-    added.dipole[0] = 1/85.10597636;
-    added.dipole[1] = 0/85.10597636;
-    added.dipole[2] = 0/85.10597636;
-    sys.particles.push_back(added);
+        added.x[0] = 0;
+        added.x[1] = 0;
+        added.x[2] = 0;
+        added.dipole[0] = 1/85.10597636;
+        added.dipole[1] = 0/85.10597636;
+        added.dipole[2] = 0/85.10597636;
+        sys.particles.push_back(added);
 
-    particle added2;
-    added2.x[0] = 4;
-    added2.x[1] = 0;
-    added2.x[2] = 0;
-    added2.dipole[0] = 1/85.10597636;
-    added2.dipole[1] = 0/85.10597636;
-    added2.dipole[2] = 0/85.10597636;
-    sys.particles.push_back(added2);
+        particle added2;
+        added2.x[0] = 4;
+        added2.x[1] = 0;
+        added2.x[2] = 0;
+        added2.dipole[0] = 1/85.10597636;
+        added2.dipole[1] = 0/85.10597636;
+        added2.dipole[2] = 0/85.10597636;
+        sys.particles.push_back(added2);
+    }
 
     currentPE = calculate_PE(&sys);//energy at first step 
 

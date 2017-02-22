@@ -58,7 +58,7 @@ typedef struct _GCMC_System
         double sumparticles,
                sumenergy;
         //next three lines are for radial distribution function
-        double BinSize = .1; 
+        double BinSize = .5; 
         int nBins,
             step;
         double * boxes;
@@ -66,7 +66,9 @@ typedef struct _GCMC_System
         bool ideal_flag,
              energy_output_flag,
              stockmayer_flag,
-             output_flag;
+             output_flag,
+             debug_flag,
+             NVT_flag;
 } GCMC_System;
 
 enum MoveType { TRANSLATE, CREATE_PARTICLE, DESTROY_PARTICLE };
