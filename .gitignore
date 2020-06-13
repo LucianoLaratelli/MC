@@ -9,6 +9,10 @@
 
 *.txt
 
+.DS_Store
+.ccls-cache/
+.ccls-cache/*
+
 NVT/NVT
 
 NVT/new.c
