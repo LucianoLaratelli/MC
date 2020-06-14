@@ -38,8 +38,14 @@ iterations,) as well as provide a nice atomistic view of the simulation:
 ![image](equil.png)
 
 Graphing one of the energy files (below is `energies.dat` for 125 Argon atoms in
-a 100*100*100 box), we find that the simulation does achieve a reasonable
+a 100\*100\*100 box), we find that the simulation does achieve a reasonable
 equilibrium (that is, only small fluctuations of the system's potential energy
 persist) rather quickly:
 
 ![image](energy.png)
+
+## Caveats
+This program is full of bugs! It was my first attempt at writing a Monte Carlo
+simulator. It was also one of my first times using `git`. There is a bit of
+profanity and other instances of , er, "poor" commit message etiquette that I
+hope you'll excuse.
