@@ -27,10 +27,10 @@ struct move_values {
   double delta, gamma, zeta;
 };
 
-#define N 1000 // number of particles
-#define T 77   // kelvin;
-#define L 200  // length of one side of the cube, L = sigma
-#define k 1.0  // boltzmann factor
+#define N 125 // number of particles
+#define T 77  // kelvin;
+#define L 100 // length of one side of the cube
+#define k 1.0 // boltzmann factor
 
 // we declare our structs so we can use them to do our bidding
 struct particle particles[N];
