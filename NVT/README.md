@@ -12,7 +12,11 @@ behavior of a group of atoms/molecules/etc. (we referred to them as
 with a fixed particle count. These conditions together make up the NVT, or
 [`canonical`](https://en.wikipedia.org/wiki/Canonical_ensemble) ensemble.
 
-
+A [Monte Carlo](https://en.wikipedia.org/wiki/Monte_Carlo_method) simulation is
+one that uses random sampling to obtain results. In the context of molecular
+simulation, a Monte Carlo simulation compares some quantity that evolves with
+the system to a random number to determine if the current iteration is
+an "acceptable" state.
 
 ## Using the program
 
